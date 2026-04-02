@@ -627,38 +627,48 @@ QPushButton:disabled {{
 }}
 """
 
-MODERN_DROP_STYLE = f"""
+MODERN_ACTION_STYLE = f"""
 QPushButton {{
-    background: #f1f5f9;
-    color: {BURP_TEXT};
-    border: 1px solid {BURP_BORDER};
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #42a5f5, stop:1 #1e88e5);
+    color: white;
+    border: 1px solid #1565c0;
     border-radius: 4px;
-    padding: 4px 14px;
-    font-weight: 500;
+    font-weight: bold;
+    padding: 6px 16px;
 }}
 QPushButton:hover {{
-    background: #e2e8f0;
-    border: 1px solid {BURP_TEXT_DIM};
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #64b5f6, stop:1 #2196f3);
+    border-color: #0d47a1;
 }}
 QPushButton:pressed {{
-    background: #cbd5e1;
+    background: #1565c0;
 }}
 QPushButton:disabled {{
-    background: {BURP_BG_DARK}bb;
-    color: {BURP_TEXT_DIM}aa;
+    background: {BURP_BG_DARK};
+    color: {BURP_TEXT_DIM};
     border: 1px solid {BURP_BORDER};
 }}
 """
 
-MODERN_ACTION_STYLE = f"""
+MODERN_DROP_STYLE = f"""
 QPushButton {{
-    background: {BURP_BG_LIGHT};
-    color: {BURP_TEXT};
-    border: 1px solid {BURP_BORDER};
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ef5350, stop:1 #d32f2f);
+    color: white;
+    border: 1px solid #b71c1c;
     border-radius: 4px;
-    padding: 4px 10px;
+    font-weight: bold;
+    padding: 6px 16px;
 }}
 QPushButton:hover {{
-    background: {BURP_BG};
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #e57373, stop:1 #f44336);
+    border-color: #880e4f;
+}}
+QPushButton:pressed {{
+    background: #b71c1c;
+}}
+QPushButton:disabled {{
+    background: {BURP_BG_DARK};
+    color: {BURP_TEXT_DIM};
+    border: 1px solid {BURP_BORDER};
 }}
 """
