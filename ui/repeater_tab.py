@@ -1,0 +1,376 @@
+"""
+Repeater Tab - Manually craft and replay HTTP requests.
+"""
+import threading
+from typing import Optional
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QTabWidget,
+    QPushButton, QLabel, QLineEdit, QComboBox, QCheckBox,
+    QFrame, QListWidget, QListWidgetItem, QGroupBox,
+    QSpinBox, QSizePolicy, QMenu, QApplication, QMessageBox
+)
+from PySide6.QtCore import Qt, Signal, QThread, QObject, QTimer
+from PySide6.QtGui import QColor, QFont
+from ui.request_editor import RequestEditor
+from ui.styles import (
+    BURP_ORANGE, BURP_BG, BURP_BG_DARK, BURP_TEXT, BURP_BORDER,
+    BURP_TEXT_DIM, BURP_SUCCESS, BURP_ERROR
+)
+
+
+# ─── HTTP Send Worker ─────────────────────────────────────────────────────────
+
+class SendWorker(QObject):
+    finished = Signal(str)
+    error = Signal(str)
+
+    def __init__(self, engine, host, port, is_https, raw):
+        super().__init__()
+        self.engine = engine
+        self.host = host
+        self.port = port
+        self.is_https = is_https
+        self.raw = raw
+
+    def run(self):
+        try:
+            result = self.engine.send_raw_request(
+                self.host, self.port, self.is_https, self.raw
+            )
+            self.finished.emit(result)
+        except Exception as e:
+            self.error.emit(str(e))
+
+
+# ─── Repeater Instance ────────────────────────────────────────────────────────
+
+class RepeaterInstance(QWidget):
+    """A single repeater request/response tab."""
+
+    def __init__(self, engine, name: str = "Request", parent=None):
+        super().__init__(parent)
+        self.engine = engine
+        self.name = name
+        self._history = []       # list of (request_raw, response_raw)
+        self._history_index = -1
+        self._thread: Optional[QThread] = None
+        self._setup_ui()
+
+    def _setup_ui(self):
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(4, 4, 4, 4)
+        layout.setSpacing(4)
+
+        # ── Target bar
+        target_grp = QGroupBox("Target")
+        tg_layout = QHBoxLayout(target_grp)
+        tg_layout.setSpacing(6)
+
+        tg_layout.addWidget(QLabel("Host:"))
+        self._host_edit = QLineEdit()
+        self._host_edit.setPlaceholderText("example.com")
+        self._host_edit.setFixedWidth(220)
+        tg_layout.addWidget(self._host_edit)
+
+        tg_layout.addWidget(QLabel("Port:"))
+        self._port_spin = QSpinBox()
+        self._port_spin.setRange(1, 65535)
+        self._port_spin.setValue(443)
+        self._port_spin.setFixedWidth(75)
+        tg_layout.addWidget(self._port_spin)
+
+        self._https_check = QCheckBox("HTTPS")
+        self._https_check.setChecked(True)
+        self._https_check.stateChanged.connect(self._on_https_changed)
+        tg_layout.addWidget(self._https_check)
+
+        self._follow_redirects = QCheckBox("Follow Redirects")
+        self._follow_redirects.setChecked(False)
+        tg_layout.addWidget(self._follow_redirects)
+
+        tg_layout.addStretch()
+        layout.addWidget(target_grp)
+
+        # ── Control toolbar
+        ctrl = QFrame()
+        ctrl.setFixedHeight(38)
+        ctrl.setStyleSheet(f"background:{BURP_BG_DARK}; border:1px solid {BURP_BORDER}; border-radius:3px;")
+        cl = QHBoxLayout(ctrl)
+        cl.setContentsMargins(8, 4, 8, 4)
+        cl.setSpacing(6)
+
+        self._send_btn = QPushButton("▶ Send")
+        self._send_btn.setObjectName("actionBtn")
+        self._send_btn.setFixedHeight(28)
+        self._send_btn.setMinimumWidth(90)
+        self._send_btn.setToolTip("Send request (Ctrl+Enter)")
+        self._send_btn.clicked.connect(self._do_send)
+        cl.addWidget(self._send_btn)
+
+        self._cancel_btn = QPushButton("◼ Cancel")
+        self._cancel_btn.setFixedHeight(28)
+        self._cancel_btn.setEnabled(False)
+        self._cancel_btn.clicked.connect(self._do_cancel)
+        cl.addWidget(self._cancel_btn)
+
+        sep = QFrame()
+        sep.setFrameShape(QFrame.Shape.VLine)
+        sep.setStyleSheet(f"color:{BURP_BORDER};")
+        cl.addWidget(sep)
+
+        # History navigation
+        self._prev_btn = QPushButton("◀")
+        self._prev_btn.setFixedSize(28, 28)
+        self._prev_btn.setToolTip("Previous request")
+        self._prev_btn.clicked.connect(self._go_prev)
+        cl.addWidget(self._prev_btn)
+
+        self._history_label = QLabel("0 / 0")
+        self._history_label.setStyleSheet(f"color:{BURP_TEXT_DIM}; font-size:11px; min-width:50px;")
+        self._history_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        cl.addWidget(self._history_label)
+
+        self._next_btn = QPushButton("▶")
+        self._next_btn.setFixedSize(28, 28)
+        self._next_btn.setToolTip("Next request")
+        self._next_btn.clicked.connect(self._go_next)
+        cl.addWidget(self._next_btn)
+
+        sep2 = QFrame()
+        sep2.setFrameShape(QFrame.Shape.VLine)
+        sep2.setStyleSheet(f"color:{BURP_BORDER};")
+        cl.addWidget(sep2)
+
+        cl.addStretch()
+
+        # Status label
+        self._status_label = QLabel("Ready")
+        self._status_label.setStyleSheet(f"color:{BURP_TEXT_DIM}; font-size:11px;")
+        cl.addWidget(self._status_label)
+
+        # Response time
+        self._time_label = QLabel("")
+        self._time_label.setStyleSheet(f"color:{BURP_ORANGE}; font-size:11px; font-weight:bold;")
+        cl.addWidget(self._time_label)
+
+        layout.addWidget(ctrl)
+
+        # ── Request / Response split
+        splitter = QSplitter(Qt.Orientation.Horizontal)
+
+        self._req_editor = RequestEditor("Request", mode="request", read_only=False)
+        self._req_editor.set_content(
+            "GET / HTTP/1.1\r\nHost: example.com\r\nUser-Agent: BurpLike/1.0\r\nAccept: */*\r\n\r\n"
+        )
+        splitter.addWidget(self._req_editor)
+
+        self._resp_editor = RequestEditor("Response", mode="response", read_only=True)
+        splitter.addWidget(self._resp_editor)
+        splitter.setSizes([500, 500])
+
+        layout.addWidget(splitter, 1)
+
+    def _on_https_changed(self, state):
+        port = 443 if state == Qt.CheckState.Checked.value else 80
+        self._port_spin.setValue(port)
+
+    def _do_send(self):
+        host = self._host_edit.text().strip()
+        port = self._port_spin.value()
+        is_https = self._https_check.isChecked()
+        raw = self._req_editor.get_content()
+
+        if not host:
+            QMessageBox.warning(self, "Missing Host", "Please specify a target host.")
+            return
+        if not raw.strip():
+            return
+
+        self._send_btn.setEnabled(False)
+        self._cancel_btn.setEnabled(True)
+        self._status_label.setText("Sending...")
+        self._status_label.setStyleSheet(f"color:{BURP_ORANGE}; font-size:11px;")
+        self._resp_editor.clear()
+        self._resp_editor.set_content("Waiting for response...", "Sending")
+
+        import time
+        self._send_start = time.time()
+
+        # Run in thread
+        self._thread = QThread()
+        self._worker = SendWorker(self.engine, host, port, is_https, raw)
+        self._worker.moveToThread(self._thread)
+        self._thread.started.connect(self._worker.run)
+        self._worker.finished.connect(self._on_response)
+        self._worker.error.connect(self._on_error)
+        self._worker.finished.connect(self._thread.quit)
+        self._worker.error.connect(self._thread.quit)
+        self._thread.start()
+
+    def _do_cancel(self):
+        if self._thread and self._thread.isRunning():
+            self._thread.terminate()
+            self._thread.wait()
+        self._send_btn.setEnabled(True)
+        self._cancel_btn.setEnabled(False)
+        self._status_label.setText("Cancelled")
+        self._status_label.setStyleSheet(f"color:{BURP_ERROR}; font-size:11px;")
+
+    def _on_response(self, resp_text: str):
+        import time
+        elapsed = (time.time() - self._send_start) * 1000
+        self._resp_editor.set_content(resp_text, f"{elapsed:.0f}ms")
+        self._time_label.setText(f"{elapsed:.0f} ms")
+        self._send_btn.setEnabled(True)
+        self._cancel_btn.setEnabled(False)
+
+        # Parse status for color
+        first_line = resp_text.split("\n")[0] if resp_text else ""
+        parts = first_line.split(" ", 2)
+        status_color = BURP_SUCCESS
+        if len(parts) >= 2:
+            try:
+                code = int(parts[1])
+                if code >= 400:
+                    status_color = BURP_ERROR
+                elif code >= 300:
+                    status_color = "#FF9800"
+            except ValueError:
+                pass
+        self._status_label.setText(f"Done: {first_line.strip()}")
+        self._status_label.setStyleSheet(f"color:{status_color}; font-size:11px; font-weight:bold;")
+
+        # Save to history
+        req_raw = self._req_editor.get_content()
+        self._history.append((req_raw, resp_text))
+        self._history_index = len(self._history) - 1
+        self._update_history_label()
+
+    def _on_error(self, err: str):
+        self._resp_editor.set_content(f"Error: {err}", "ERROR")
+        self._send_btn.setEnabled(True)
+        self._cancel_btn.setEnabled(False)
+        self._status_label.setText(f"Error: {err}")
+        self._status_label.setStyleSheet(f"color:{BURP_ERROR}; font-size:11px;")
+
+    def _go_prev(self):
+        if self._history_index > 0:
+            self._history_index -= 1
+            req, resp = self._history[self._history_index]
+            self._req_editor.set_content(req)
+            self._resp_editor.set_content(resp)
+            self._update_history_label()
+
+    def _go_next(self):
+        if self._history_index < len(self._history) - 1:
+            self._history_index += 1
+            req, resp = self._history[self._history_index]
+            self._req_editor.set_content(req)
+            self._resp_editor.set_content(resp)
+            self._update_history_label()
+
+    def _update_history_label(self):
+        total = len(self._history)
+        idx = self._history_index + 1 if self._history else 0
+        self._history_label.setText(f"{idx} / {total}")
+
+    def load_from_flow(self, entry):
+        """Load a flow entry into the repeater."""
+        self._host_edit.setText(entry.host)
+        self._port_spin.setValue(entry.port)
+        self._https_check.setChecked(entry.is_https)
+
+        req_lines = [f"{entry.method} {entry.path} HTTP/1.1"]
+        for k, v in entry.request_headers_raw.items():
+            req_lines.append(f"{k}: {v}")
+        req_lines.append("")
+        try:
+            req_lines.append(entry.request_body.decode("utf-8", errors="replace"))
+        except Exception:
+            pass
+        self._req_editor.set_content("\r\n".join(req_lines))
+
+        resp_text = ""
+        if entry.status_code:
+            resp_lines = [f"HTTP/1.1 {entry.status_code} {entry.status_reason}"]
+            for k, v in entry.response_headers_raw.items():
+                resp_lines.append(f"{k}: {v}")
+            resp_lines.append("")
+            try:
+                resp_lines.append(entry.response_body.decode("utf-8", errors="replace"))
+            except Exception:
+                pass
+            resp_text = "\r\n".join(resp_lines)
+        self._resp_editor.set_content(resp_text)
+
+
+# ─── Repeater Tab ─────────────────────────────────────────────────────────────
+
+class RepeaterTab(QWidget):
+    """
+    Repeater tab - manages multiple repeater instances via sub-tabs.
+    """
+    def __init__(self, engine, parent=None):
+        super().__init__(parent)
+        self.engine = engine
+        self._instance_count = 0
+        self._setup_ui()
+
+    def _setup_ui(self):
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        # ── Header
+        header = QFrame()
+        header.setFixedHeight(30)
+        header.setStyleSheet(f"background:{BURP_BG_DARK}; border-bottom:1px solid {BURP_BORDER};")
+        hl = QHBoxLayout(header)
+        hl.setContentsMargins(8, 2, 8, 2)
+
+        title = QLabel("HTTP Repeater")
+        title.setStyleSheet(f"color:{BURP_ORANGE}; font-weight:bold; font-size:13px;")
+        hl.addWidget(title)
+        hl.addStretch()
+
+        new_tab_btn = QPushButton("+ New Tab")
+        new_tab_btn.setFixedHeight(22)
+        new_tab_btn.clicked.connect(self._new_instance)
+        hl.addWidget(new_tab_btn)
+
+        layout.addWidget(header)
+
+        # ── Instance tabs
+        self._tabs = QTabWidget()
+        self._tabs.setTabsClosable(True)
+        self._tabs.tabCloseRequested.connect(self._close_tab)
+        layout.addWidget(self._tabs, 1)
+
+        # Start with one instance
+        self._new_instance()
+
+    def _new_instance(self, name: str = None) -> RepeaterInstance:
+        self._instance_count += 1
+        if not name:
+            name = f"#{self._instance_count}"
+        inst = RepeaterInstance(self.engine, name)
+        idx = self._tabs.addTab(inst, name)
+        self._tabs.setCurrentIndex(idx)
+        return inst
+
+    def _close_tab(self, idx: int):
+        if self._tabs.count() > 1:
+            self._tabs.removeTab(idx)
+
+    def load_from_flow(self, entry):
+        """Accept a flow from the Proxy history."""
+        # Reuse current tab if empty, else new tab
+        current = self._tabs.currentWidget()
+        if isinstance(current, RepeaterInstance):
+            if not current._req_editor.get_content().strip():
+                current.load_from_flow(entry)
+                name = f"{entry.method} {entry.host}"
+                self._tabs.setTabText(self._tabs.currentIndex(), name[:25])
+                return
+        inst = self._new_instance(f"{entry.method} {entry.host}"[:25])
+        inst.load_from_flow(entry)
