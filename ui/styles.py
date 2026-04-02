@@ -2,35 +2,35 @@
 Burp Suite-inspired dark theme stylesheet for PySide6.
 """
 
-BURP_ORANGE = "#ff6633"
-BURP_ORANGE_DARK = "#e65c2e"
-BURP_ORANGE_LIGHT = "#ff855c"
-BURP_BG = "#f2f2f2"
-BURP_BG_DARK = "#e6e6e6"
+BURP_ORANGE = "#f97316"       # Hyper-Modern Orange (Vibrant)
+BURP_ORANGE_DARK = "#ea580c"
+BURP_ORANGE_LIGHT = "#fb923c"
+BURP_BG = "#ffffff"          # Pure White Background
+BURP_BG_DARK = "#f8fafc"     # Subtle Slate/Grey
 BURP_BG_LIGHT = "#ffffff"
-BURP_BORDER = "#cccccc"
-BURP_BORDER_LIGHT = "#dddddd"
-BURP_TEXT = "#333333"
-BURP_TEXT_DIM = "#666666"
+BURP_BORDER = "#e2e8f0"      # Modern Slate Border
+BURP_BORDER_LIGHT = "#f1f5f9"
+BURP_TEXT = "#0f172a"        # Deep Slate (Primary Text)
+BURP_TEXT_DIM = "#64748b"     # Muted Slate Text
 BURP_TEXT_BRIGHT = "#000000"
-BURP_SELECTION = "#cedef2"
-BURP_TABLE_ALT = "#fafafa"
-BURP_SUCCESS = "#008800"
-BURP_ERROR = "#cc0000"
-BURP_WARNING = "#886600"
-BURP_INFO = "#004488"
-BURP_INFO_BG = "#e1f5fe"
-BURP_SUCCESS_BG = "#e8f5e9"
-BURP_WARNING_BG = "#fff9c4"
-BURP_ERROR_BG = "#ffebee"
-BURP_INTERCEPT_ON = "#005a9e"
-BURP_INTERCEPT_OFF = "#757575"
+BURP_SELECTION = "#ffedd5"   # Soft Orange Selection Tint
+BURP_TABLE_ALT = "#fafaf9"
+BURP_SUCCESS = "#16a34a"      # Modern Green
+BURP_ERROR = "#dc2626"        # Rose Red
+BURP_WARNING = "#f59e0b"      # Amber
+BURP_INFO = "#3b82f6"         # Blue
+BURP_INFO_BG = "#eff6ff"
+BURP_SUCCESS_BG = "#f0fdf4"
+BURP_WARNING_BG = "#fffbeb"
+BURP_ERROR_BG = "#fef2f2"
+BURP_INTERCEPT_ON = "#ea580c"
+BURP_INTERCEPT_OFF = "#64748b"
 BURP_TAB_ACTIVE = "#ffffff"
-BURP_TAB_INACTIVE = "#e6e6e6"
-BURP_HEADER = "#f0f0f0"
+BURP_TAB_INACTIVE = "#f8fafc"
+BURP_HEADER = "#f1f5f9"
 BURP_INPUT = "#ffffff"
-BURP_GREEN = "#2e7d32"
-BURP_RED = "#d32f2f"
+BURP_GREEN = "#16a34a"
+BURP_RED = "#dc2626"
 
 MAIN_STYLESHEET = f"""
 /* ─── Global ───────────────────────────────────────────── */
@@ -540,20 +540,20 @@ INTERCEPT_OFF_STYLE = f"""
 """
 
 HTTP_STATUS_COLORS = {
-    "2": "#4CAF50",   # 2xx green
-    "3": "#FF9800",   # 3xx orange
-    "4": "#F44336",   # 4xx red
-    "5": "#E91E63",   # 5xx pink-red
+    "2": "#059669",   # 2xx emerald
+    "3": "#2563eb",   # 3xx blue
+    "4": "#d97706",   # 4xx amber
+    "5": "#dc2626",   # 5xx rose
 }
 
 METHOD_COLORS = {
-    "GET": "#5a9e5a",
-    "POST": "#9e8a5a",
-    "PUT": "#5a7a9e",
-    "DELETE": "#9e5a5a",
-    "PATCH": "#7a5a9e",
-    "HEAD": "#5a9e9e",
-    "OPTIONS": "#888888",
+    "GET": "#059669",
+    "POST": "#2563eb",
+    "PUT": "#7c3aed",
+    "DELETE": "#dc2626",
+    "PATCH": "#db2777",
+    "HEAD": "#64748b",
+    "OPTIONS": "#94a3b8",
 }
 
 # ─── New Modern Button Styles ──────────────────────────────────────────
