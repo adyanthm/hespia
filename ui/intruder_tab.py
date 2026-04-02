@@ -715,16 +715,18 @@ class IntruderTab(QWidget):
         al.setContentsMargins(8, 4, 8, 4)
         al.setSpacing(8)
 
-        self._start_attack_btn = QPushButton("▶ Start Attack")
-        self._start_attack_btn.setObjectName("actionBtn")
+        from ui.styles import MODERN_ACTION_STYLE, MODERN_DROP_STYLE
+
+        self._start_attack_btn = QPushButton("▶ Launch Attack")
         self._start_attack_btn.setFixedHeight(32)
+        self._start_attack_btn.setStyleSheet(MODERN_ACTION_STYLE)
         self._start_attack_btn.clicked.connect(self._start_attack)
         al.addWidget(self._start_attack_btn)
 
-        self._stop_attack_btn = QPushButton("◼ Stop")
-        self._stop_attack_btn.setObjectName("dangerBtn")
+        self._stop_attack_btn = QPushButton("◼ Stop Attack")
         self._stop_attack_btn.setFixedHeight(32)
         self._stop_attack_btn.setEnabled(False)
+        self._stop_attack_btn.setStyleSheet(MODERN_DROP_STYLE)
         self._stop_attack_btn.clicked.connect(self._stop_attack)
         al.addWidget(self._stop_attack_btn)
 
@@ -863,7 +865,7 @@ class IntruderTab(QWidget):
         self._progress.setVisible(True)
         
         payload_sets = self._payloads_panel.get_all_payload_sets()
-        self._progress.setRange(0, 100) # Progress will be %
+        # Progress will be handled in _on_progress with real numbers
         self._progress.setValue(0)
 
         attack_type = self._positions_editor.get_attack_type()
@@ -894,6 +896,7 @@ class IntruderTab(QWidget):
         self._results.add_result(num, payload, status, length, req, resp)
 
     def _on_progress(self, current, total):
+        self._progress.setRange(0, total) # Set absolute range
         self._progress.setValue(current)
         self._attack_status.setText(f"{current}/{total} requests")
 
