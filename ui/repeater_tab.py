@@ -125,20 +125,29 @@ class RepeaterInstance(QWidget):
         # History navigation
         btn_style = f"""
             QPushButton {{
-                color: {BURP_ORANGE};
+                color: {BURP_TEXT};
                 font-weight: bold;
+                font-size: 14px;
                 border: 1px solid {BURP_BORDER};
                 border-radius: 4px;
                 background-color: {BURP_BG};
+                padding: 0px;
             }}
             QPushButton:hover {{
                 background-color: {BURP_HEADER};
+                color: {BURP_ORANGE};
+            }}
+            QPushButton:pressed {{
+                background-color: {BURP_BG_DARK};
+            }}
+            QPushButton:disabled {{
+                color: {BURP_TEXT_DIM};
+                opacity: 0.5;
             }}
         """
-        self._prev_btn = QPushButton("◀")
+        self._prev_btn = QPushButton("<")
         self._prev_btn.setFixedSize(28, 28)
         self._prev_btn.setStyleSheet(btn_style)
-        self._prev_btn.setToolTip("Previous request")
         self._prev_btn.clicked.connect(self._go_prev)
         cl.addWidget(self._prev_btn)
 
@@ -147,10 +156,9 @@ class RepeaterInstance(QWidget):
         self._history_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         cl.addWidget(self._history_label)
 
-        self._next_btn = QPushButton("▶")
+        self._next_btn = QPushButton(">")
         self._next_btn.setFixedSize(28, 28)
         self._next_btn.setStyleSheet(btn_style)
-        self._next_btn.setToolTip("Next request")
         self._next_btn.clicked.connect(self._go_next)
         cl.addWidget(self._next_btn)
 
