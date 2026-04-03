@@ -515,12 +515,14 @@ class InterceptPanel(QWidget):
             self._intercept_btn.setText("Intercept is OFF")
             self._intercept_btn.setStyleSheet(INTERCEPT_OFF_STYLE)
             self._info_label.setText("Intercept is off.")
-            # Forward everything in table
+            # Forward everything in table - Batch operation
+            self._table.setSortingEnabled(False)
             while self._table.rowCount() > 0:
                 item = self._table.item(0, 0)
                 data = item.data(Qt.ItemDataRole.UserRole)
                 self.forward_clicked.emit(data["id"], data["raw"], data["is_response"])
                 self._table.removeRow(0)
+            self._table.setSortingEnabled(True)
             
             self._update_display()
 
@@ -600,13 +602,13 @@ class InterceptPanel(QWidget):
         self._update_display()
     def _do_forward_all(self):
         """Forward every intercepted item currently in the queue."""
+        self._table.setSortingEnabled(False)
         while self._table.rowCount() > 0:
             item = self._table.item(0, 0)
             data = item.data(Qt.ItemDataRole.UserRole)
-            # Use original raw if not edited? Or modified if it's the selected one?
-            # Burp forwards original for background items.
             self.forward_clicked.emit(data["id"], data["raw"], data["is_response"])
             self._table.removeRow(0)
+        self._table.setSortingEnabled(True)
         self._update_display()
 
     def _do_drop_all(self):

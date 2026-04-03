@@ -155,53 +155,6 @@ QPushButton:disabled {{
     border-color: {BURP_BORDER};
     background-color: {BURP_BG_DARK};
 }}
-QPushButton#interceptBtn {{
-    font-size: 13px;
-    font-weight: bold;
-    padding: 8px 20px;
-    border-radius: 4px;
-    min-width: 140px;
-}}
-QPushButton#interceptBtn[active="true"] {{
-    background-color: {BURP_INTERCEPT_ON};
-    border-color: #ff8547;
-    color: white;
-}}
-QPushButton#interceptBtn[active="false"] {{
-    background-color: {BURP_INTERCEPT_OFF};
-    border-color: #5fa574;
-    color: white;
-}}
-QPushButton#actionBtn {{
-    background-color: {BURP_ORANGE};
-    color: white;
-    border: none;
-    border-radius: 20px;
-    font-weight: bold;
-}}
-QPushButton#actionBtn:hover {{
-    background-color: #ff7c52;
-}}
-QPushButton#actionBtn:disabled {{
-    background-color: #dddddd;
-    color: #999999;
-}}
-QPushButton#dangerBtn {{
-    background-color: #fceaea;
-    color: {BURP_RED};
-    border: 1px solid {BURP_RED};
-    border-radius: 20px;
-    font-weight: bold;
-}}
-QPushButton#dangerBtn:hover {{
-    background-color: {BURP_RED};
-    color: white;
-}}
-QPushButton#dangerBtn:disabled {{
-    background-color: #f5f5f5;
-    border-color: #dddddd;
-    color: #bbbbbb;
-}}
 
 /* ─── Table Widget ──────────────────────────────────────── */
 QTableWidget {{
@@ -302,11 +255,20 @@ QSpinBox {{
     background-color: {BURP_INPUT};
     color: {BURP_TEXT};
     border: 1px solid {BURP_BORDER};
-    border-radius: 3px;
-    padding: 4px;
+    border-radius: 4px;
+    padding: 4px 6px;
 }}
 QSpinBox:focus {{
     border-color: {BURP_ORANGE};
+}}
+QSpinBox::up-button, QSpinBox::down-button {{
+    border: none;
+    width: 18px;
+    background: transparent;
+}}
+QSpinBox::up-arrow, QSpinBox::down-arrow {{
+    width: 8px;
+    height: 8px;
 }}
 
 /* ─── Check Box ─────────────────────────────────────────── */
@@ -629,19 +591,19 @@ QPushButton:disabled {{
 
 MODERN_ACTION_STYLE = f"""
 QPushButton {{
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #42a5f5, stop:1 #1e88e5);
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 {BURP_ORANGE_LIGHT}, stop:1 {BURP_ORANGE});
     color: white;
-    border: 1px solid #1565c0;
+    border: 1px solid {BURP_ORANGE_DARK};
     border-radius: 4px;
     font-weight: bold;
     padding: 6px 16px;
 }}
 QPushButton:hover {{
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #64b5f6, stop:1 #2196f3);
-    border-color: #0d47a1;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 {BURP_ORANGE}, stop:1 {BURP_ORANGE_DARK});
+    border-color: {BURP_ORANGE};
 }}
 QPushButton:pressed {{
-    background: #1565c0;
+    background: {BURP_ORANGE_DARK};
 }}
 QPushButton:disabled {{
     background: {BURP_BG_DARK};

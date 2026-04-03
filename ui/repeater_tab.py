@@ -2,6 +2,7 @@
 Repeater Tab - Manually craft and replay HTTP requests.
 """
 import threading
+import re
 from typing import Optional
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QTabWidget,
@@ -14,7 +15,8 @@ from PySide6.QtGui import QColor, QFont
 from ui.request_editor import RequestEditor
 from ui.styles import (
     BURP_ORANGE, BURP_BG, BURP_BG_DARK, BURP_TEXT, BURP_BORDER,
-    BURP_TEXT_DIM, BURP_SUCCESS, BURP_ERROR
+    BURP_TEXT_DIM, BURP_SUCCESS, BURP_ERROR, BURP_HEADER,
+    MODERN_ACTION_STYLE, MODERN_DROP_STYLE
 )
 
 
@@ -70,6 +72,7 @@ class RepeaterInstance(QWidget):
         self._host_edit = QLineEdit()
         self._host_edit.setPlaceholderText("example.com")
         self._host_edit.setFixedWidth(220)
+        self._host_edit.textChanged.connect(self._sync_host_header)
         tg_layout.addWidget(self._host_edit)
 
         tg_layout.addWidget(QLabel("Port:"))
@@ -100,7 +103,7 @@ class RepeaterInstance(QWidget):
         cl.setSpacing(6)
 
         self._send_btn = QPushButton("▶ Send")
-        self._send_btn.setObjectName("actionBtn")
+        self._send_btn.setStyleSheet(MODERN_ACTION_STYLE)
         self._send_btn.setFixedHeight(28)
         self._send_btn.setMinimumWidth(90)
         self._send_btn.setToolTip("Send request (Ctrl+Enter)")
@@ -108,6 +111,7 @@ class RepeaterInstance(QWidget):
         cl.addWidget(self._send_btn)
 
         self._cancel_btn = QPushButton("◼ Cancel")
+        self._cancel_btn.setStyleSheet(MODERN_DROP_STYLE)
         self._cancel_btn.setFixedHeight(28)
         self._cancel_btn.setEnabled(False)
         self._cancel_btn.clicked.connect(self._do_cancel)
@@ -119,8 +123,21 @@ class RepeaterInstance(QWidget):
         cl.addWidget(sep)
 
         # History navigation
+        btn_style = f"""
+            QPushButton {{
+                color: {BURP_ORANGE};
+                font-weight: bold;
+                border: 1px solid {BURP_BORDER};
+                border-radius: 4px;
+                background-color: {BURP_BG};
+            }}
+            QPushButton:hover {{
+                background-color: {BURP_HEADER};
+            }}
+        """
         self._prev_btn = QPushButton("◀")
         self._prev_btn.setFixedSize(28, 28)
+        self._prev_btn.setStyleSheet(btn_style)
         self._prev_btn.setToolTip("Previous request")
         self._prev_btn.clicked.connect(self._go_prev)
         cl.addWidget(self._prev_btn)
@@ -132,6 +149,7 @@ class RepeaterInstance(QWidget):
 
         self._next_btn = QPushButton("▶")
         self._next_btn.setFixedSize(28, 28)
+        self._next_btn.setStyleSheet(btn_style)
         self._next_btn.setToolTip("Next request")
         self._next_btn.clicked.connect(self._go_next)
         cl.addWidget(self._next_btn)
@@ -159,8 +177,14 @@ class RepeaterInstance(QWidget):
         splitter = QSplitter(Qt.Orientation.Horizontal)
 
         self._req_editor = RequestEditor("Request", mode="request", read_only=False)
+        default_ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
         self._req_editor.set_content(
-            "GET / HTTP/1.1\r\nHost: example.com\r\nUser-Agent: BurpLike/1.0\r\nAccept: */*\r\n\r\n"
+            f"GET / HTTP/1.1\r\n"
+            f"Host: example.com\r\n"
+            f"User-Agent: {default_ua}\r\n"
+            f"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8\r\n"
+            f"Accept-Language: en-US,en;q=0.9\r\n"
+            f"Connection: close\r\n\r\n"
         )
         splitter.addWidget(self._req_editor)
 
@@ -169,6 +193,23 @@ class RepeaterInstance(QWidget):
         splitter.setSizes([500, 500])
 
         layout.addWidget(splitter, 1)
+
+    def _sync_host_header(self, host):
+        """Automatically update Host: header in text editor when target Host field changes."""
+        if not host.strip():
+            return
+        content = self._req_editor.get_content()
+        # Find and replace Host: line
+        new_content = re.sub(r"Host: [^\r\n]*", f"Host: {host}", content, flags=re.IGNORECASE)
+        if new_content == content and "Host:" not in content.lower() and "HTTP/" in content:
+            # If Host: is missing, inject it after request line
+            lines = content.split("\n")
+            if lines:
+                lines.insert(1, f"Host: {host}\r")
+                new_content = "\n".join(lines)
+        
+        if new_content != content:
+            self._req_editor.set_content(new_content)
 
     def _on_https_changed(self, state):
         port = 443 if state == Qt.CheckState.Checked.value else 80
