@@ -633,10 +633,12 @@ class ProxyEngine(QObject):
                     headers[k.strip()] = v.strip()
                 i += 1
 
-            # Body
-            body_lines = lines[i + 1:] if i + 1 < len(lines) else []
-            raw_body = "\n".join(body_lines) # Don't strip!
-            body_bytes = raw_body.encode("utf-8", errors="replace")
+            # Body - Split by the blank line after headers
+            parts = raw.replace("\r\n", "\n").split("\n\n", 1)
+            body_bytes = b""
+            if len(parts) > 1:
+                # Use raw parts if possible to avoid split/join issues
+                body_bytes = parts[1].encode("utf-8", errors="replace")
 
             # Build raw HTTP
             req_lines = [f"{method} {path} HTTP/1.1"]
