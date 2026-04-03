@@ -168,7 +168,7 @@ class DashboardWidget(QWidget):
         t1 = QLabel("Workbench")
         t1.setStyleSheet(f"color:{BURP_TEXT}; font-size:28px; font-weight:700; font-family:'Segoe UI Semibold';")
         title_col.addWidget(t1)
-        t2 = QLabel("Welcome to ProxyStrike. Monitor and manage your security testing tasks here.")
+        t2 = QLabel("Welcome to Hespia. Monitor and manage your security testing tasks here.")
         t2.setStyleSheet(f"color:{BURP_TEXT_DIM}; font-size:13px;")
         title_col.addWidget(t2)
         hl.addLayout(title_col)
@@ -312,7 +312,7 @@ class DashboardWidget(QWidget):
     def set_running(self, host: str, port: int):
         self._proxy_status.setText("● SERVICE RUNNING")
         self._proxy_status.setStyleSheet(f"color:{BURP_SUCCESS}; font-size:16px; font-weight:bold; letter-spacing:1px;")
-        self._proxy_addr.setText(f"ProxyStrike listening on {host}:{port}")
+        self._proxy_addr.setText(f"Hespia listening on {host}:{port}")
         self._start_btn.setEnabled(False)
         self._stop_btn.setEnabled(True)
 
@@ -344,7 +344,7 @@ class MainWindow(QMainWindow):
         self._current_host = "127.0.0.1"
         self._current_port = 8080
 
-        self.setWindowTitle("ProxyStrike — Advanced Web Proxy Tool")
+        self.setWindowTitle("Hespia — Advanced Web Proxy Tool")
         self.setMinimumSize(1280, 800)
         self.resize(1440, 900)
 
@@ -376,9 +376,9 @@ class MainWindow(QMainWindow):
         bl.setContentsMargins(12, 4, 12, 4)
         bl.setSpacing(12)
 
-        logo = QLabel("⚡ ProxyStrike")
+        logo = QLabel("Hespia")
         logo.setStyleSheet(
-            f"color:{BURP_ORANGE}; font-size:15px; font-weight:bold; letter-spacing:1px;"
+            f"color:{BURP_ORANGE}; font-size:18px; font-weight:bold; letter-spacing:1.5px;"
         )
         bl.addWidget(logo)
 
@@ -478,7 +478,7 @@ class MainWindow(QMainWindow):
         l.setContentsMargins(20, 20, 20, 20)
         l.setSpacing(12)
 
-        title = QLabel("ProxyStrike Help")
+        title = QLabel("Hespia Help")
         title.setStyleSheet(f"color:{BURP_ORANGE}; font-size:20px; font-weight:bold;")
         l.addWidget(title)
 
@@ -587,7 +587,7 @@ Supports: Sniper, Battering Ram, Pitchfork, Cluster Bomb attack types.</p>
 
         # Help
         help_m = mb.addMenu("Help")
-        about_act = QAction("About ProxyStrike", self)
+        about_act = QAction("About Hespia", self)
         about_act.triggered.connect(self._show_about)
         help_m.addAction(about_act)
 
@@ -792,8 +792,8 @@ Supports: Sniper, Battering Ram, Pitchfork, Cluster Bomb attack types.</p>
 
     def _show_about(self):
         QMessageBox.about(
-            self, "About ProxyStrike",
-            "<b>ProxyStrike</b> v1.0.0<br><br>"
+            self, "About Hespia",
+            "<b>Hespia</b> v1.0.0<br><br>"
             "A Burp Suite-inspired web proxy tool.<br>"
             "Built with Python, mitmproxy, and PySide6.<br><br>"
             "Features:<br>"

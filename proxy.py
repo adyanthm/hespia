@@ -1,5 +1,5 @@
 """
-ProxyStrike — Advanced Web Proxy Tool
+Hespia — Advanced Web Proxy Tool
 Entry point.
 
 Usage:
@@ -44,7 +44,7 @@ def main():
     check_dependencies()
 
     parser = argparse.ArgumentParser(
-        description="ProxyStrike — Advanced Web Proxy Tool"
+        description="Hespia — Advanced Web Proxy Tool"
     )
     parser.add_argument(
         "--host", default="127.0.0.1",
@@ -70,9 +70,9 @@ def main():
     )
 
     app = QApplication(sys.argv)
-    app.setApplicationName("ProxyStrike")
+    app.setApplicationName("Hespia")
     app.setApplicationVersion("1.0.0")
-    app.setOrganizationName("ProxyStrike")
+    app.setOrganizationName("Hespia")
 
     # Set default font
     font = QFont("Segoe UI", 10)
