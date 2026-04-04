@@ -15,6 +15,16 @@ import argparse
 # Ensure project root is on path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
+
 def check_dependencies():
     """Check that all required packages are available."""
     missing = []
@@ -61,7 +71,7 @@ def main():
     args = parser.parse_args()
 
     from PySide6.QtWidgets import QApplication, QSplashScreen
-    from PySide6.QtGui import QPixmap, QColor, QFont
+    from PySide6.QtGui import QPixmap, QColor, QFont, QIcon
     from PySide6.QtCore import Qt, QTimer
 
     # High-DPI support
@@ -71,8 +81,14 @@ def main():
 
     app = QApplication(sys.argv)
     
+    # ── Application Branding ──
+    app.setApplicationName("Hespia")
+    app.setApplicationVersion("1.0.0")
+    app.setOrganizationName("Hespia")
+    app.setWindowIcon(QIcon(resource_path("media/logo.png")))
+    
     # ── Splash Screen ──
-    banner_pix = QPixmap("media/banner.png")
+    banner_pix = QPixmap(resource_path("media/banner.png"))
     
     # Scale relative to screen size (IDE-like: roughly 35% of screen width)
     screen = app.primaryScreen()

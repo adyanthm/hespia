@@ -449,7 +449,9 @@ class ProxyEngine(QObject):
 
     def _get_conf_dir(self) -> str:
         import os
-        conf = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".mitmproxy")
+        # Use a persistent user-home directory for certificates
+        # This prevents 'Bad Signature' errors when running as a temporary executable
+        conf = os.path.expanduser("~/.hespia/.mitmproxy")
         os.makedirs(conf, exist_ok=True)
         return conf
 
@@ -513,6 +515,67 @@ class ProxyEngine(QObject):
         flow.kill()
 
     # ── Scope ──────────────────────────────────────────────────────────────
+
+    def is_host_in_scope(self, host: str) -> bool:
+        """Helper for UI to check if a host is currently in-scope."""
+        if not self.scope_rules:
+            return True
+        
+        # If any 'include' rule matches, it's potentially in scope
+        # If any 'exclude' rule matches, it's definitely out of scope
+        import re
+        
+        # Exclude rules take precedence
+        exclude_rules = [r for r in self.scope_rules if r.get("enabled", True) and not r.get("include", True)]
+        for rule in exclude_rules:
+            if re.search(rule.get("host", ".*"), host, re.I):
+                return False
+                
+        # Include rules
+        include_rules = [r for r in self.scope_rules if r.get("enabled", True) and r.get("include", True)]
+        if not include_rules:
+            return True # If no include rules, assume everything is included (if not excluded)
+            
+        for rule in include_rules:
+            if re.search(rule.get("host", ".*"), host, re.I):
+                return True
+                
+        return False
+
+    def is_in_scope(self, url: str) -> bool:
+        """Full URL scope check."""
+        if not self.scope_rules:
+            return True
+        
+        import re
+        from urllib.parse import urlparse
+        try:
+            parsed = urlparse(url)
+            host = parsed.netloc.split(":")[0]
+            port = str(parsed.port) if parsed.port else ("443" if parsed.scheme == "https" else "80")
+            path = parsed.path or "/"
+            
+            # Exclude rules
+            for rule in [r for r in self.scope_rules if r.get("enabled") and not r.get("include")]:
+                h_match = re.search(rule.get("host", ".*"), host, re.I)
+                p_match = re.search(rule.get("port", ".*"), port)
+                path_match = re.search(rule.get("path", ".*"), path)
+                if h_match and p_match and path_match:
+                    return False
+            
+            # Include rules
+            include_rules = [r for r in self.scope_rules if r.get("enabled") and r.get("include")]
+            if not include_rules:
+                return True
+            for rule in include_rules:
+                h_match = re.search(rule.get("host", ".*"), host, re.I)
+                p_match = re.search(rule.get("port", ".*"), port)
+                path_match = re.search(rule.get("path", ".*"), path)
+                if h_match and p_match and path_match:
+                    return True
+            return False
+        except Exception:
+            return True
 
     def _should_intercept(self, flow) -> bool:
         """

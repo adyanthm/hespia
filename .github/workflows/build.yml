@@ -1,0 +1,57 @@
+name: Release Build - Multi-OS
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Build with PyInstaller
+      run: |
+        pyinstaller Hespia.spec
+
+    - name: Prep Windows Artifact
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        mv dist/Hespia.exe dist/Hespia_Windows_v1.0.0.exe
+
+    - name: Prep macOS Artifact
+      if: matrix.os == 'macos-latest'
+      run: |
+        mv dist/Hespia dist/Hespia_macOS_v1.0.0
+
+    - name: Prep Linux Artifact
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        mv dist/Hespia dist/Hespia_Linux_v1.0.0
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: Hespia-${{ matrix.os }}
+        path: |
+          dist/Hespia_Windows_v1.0.0.exe
+          dist/Hespia_macOS_v1.0.0
+          dist/Hespia_Linux_v1.0.0
