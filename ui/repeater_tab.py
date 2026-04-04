@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
     QSpinBox, QSizePolicy, QMenu, QApplication, QMessageBox
 )
 from PySide6.QtCore import Qt, Signal, QThread, QObject, QTimer
-from PySide6.QtGui import QColor, QFont
+from PySide6.QtGui import QColor, QFont, QTextCursor
 from ui.request_editor import RequestEditor
 from ui.styles import (
     HESPIA_ORANGE, HESPIA_BG, HESPIA_BG_DARK, HESPIA_TEXT, HESPIA_BORDER,
@@ -57,6 +57,13 @@ class RepeaterInstance(QWidget):
         self._history = []       # list of (request_raw, response_raw)
         self._history_index = -1
         self._thread: Optional[QThread] = None
+        
+        # Debounce timer for auto-updates (Host, Content-Length)
+        self._debounce_timer = QTimer(self)
+        self._debounce_timer.setSingleShot(True)
+        self._debounce_timer.setInterval(500) # Wait 500ms before snapping
+        self._debounce_timer.timeout.connect(self._apply_auto_updates)
+
         self._setup_ui()
 
     def _setup_ui(self):
@@ -202,26 +209,80 @@ class RepeaterInstance(QWidget):
         splitter.setSizes([500, 500])
 
         self._req_editor.send_to_decoder.connect(self.send_to_decoder.emit)
+        self._req_editor.content_changed.connect(self._on_req_content_changed)
         self._resp_editor.send_to_decoder.connect(self.send_to_decoder.emit)
 
         layout.addWidget(splitter, 1)
 
     def _sync_host_header(self, host):
-        """Automatically update Host: header in text editor when target Host field changes."""
-        if not host.strip():
-            return
+        """Trigger debounced update for Host: header."""
+        self._debounce_timer.start()
+
+    def _on_req_content_changed(self, content):
+        """Trigger debounced update for Content-Length: header."""
+        self._debounce_timer.start()
+
+    def _apply_auto_updates(self):
+        """Perform the actual synchronization of Host: and Content-Length: headers."""
+        host = self._host_edit.text().strip()
         content = self._req_editor.get_content()
-        # Find and replace Host: line
-        new_content = re.sub(r"Host: [^\r\n]*", f"Host: {host}", content, flags=re.IGNORECASE)
-        if new_content == content and "Host:" not in content.lower() and "HTTP/" in content:
-            # If Host: is missing, inject it after request line
-            lines = content.split("\n")
-            if lines:
-                lines.insert(1, f"Host: {host}\r")
-                new_content = "\n".join(lines)
-        
+        if not content.strip():
+            return
+
+        new_content = content
+
+        # 1. Host sync
+        if host:
+            new_content = re.sub(r"Host: [^\r\n]*", f"Host: {host}", new_content, flags=re.IGNORECASE)
+            if new_content == content and "Host:" not in content.lower() and "HTTP/" in content:
+                # If Host: is missing, inject it after request line
+                lines = new_content.split("\n")
+                if lines:
+                    lines.insert(1, f"Host: {host}\r")
+                    new_content = "\n".join(lines)
+
+        # 2. Content-Length sync
+        parts = new_content.replace("\r\n", "\n").split("\n\n", 1)
+        if len(parts) >= 2:
+            body = parts[1]
+            length = len(body.encode("utf-8"))
+            
+            # Check if length changed
+            match = re.search(r"Content-Length:\s*(\d+)", new_content, re.I)
+            body_len_changed = True
+            if match:
+                current_len = int(match.group(1))
+                if current_len == length:
+                    body_len_changed = False
+            
+            if body_len_changed:
+                updated_c_len = re.sub(r"Content-Length:\s*\d+", f"Content-Length: {length}", new_content, flags=re.I)
+                if updated_c_len == new_content and "Content-Length:" not in new_content.lower():
+                    # Inject after Host or request line
+                    lines = new_content.split("\n")
+                    if len(lines) > 1:
+                        lines.insert(2, f"Content-Length: {length}\r")
+                        updated_c_len = "\n".join(lines)
+                new_content = updated_c_len
+
+        # 3. Apply if changed
         if new_content != content:
+            # Block signals to avoid recursion during refresh
+            self._req_editor.blockSignals(True)
+            # Use internal editor for cursor persistence
+            raw_edit = self._req_editor._raw_editor
+            cursor = raw_edit.textCursor()
+            pos = cursor.position()
+            anchor = cursor.anchor()
+            
             self._req_editor.set_content(new_content)
+            
+            # Restore selection/position
+            new_cursor = raw_edit.textCursor()
+            new_cursor.setPosition(min(anchor, len(new_content)))
+            new_cursor.setPosition(min(pos, len(new_content)), QTextCursor.MoveMode.KeepAnchor)
+            raw_edit.setTextCursor(new_cursor)
+            self._req_editor.blockSignals(False)
 
     def _on_https_changed(self, state):
         port = 443 if state == Qt.CheckState.Checked.value else 80
@@ -329,10 +390,6 @@ class RepeaterInstance(QWidget):
 
     def load_from_flow(self, entry):
         """Load a flow entry into the repeater."""
-        self._host_edit.setText(entry.host)
-        self._port_spin.setValue(entry.port)
-        self._https_check.setChecked(entry.is_https)
-
         req_lines = [f"{entry.method} {entry.path} HTTP/1.1"]
         for k, v in entry.request_headers_raw.items():
             req_lines.append(f"{k}: {v}")
@@ -342,6 +399,10 @@ class RepeaterInstance(QWidget):
         except Exception:
             pass
         self._req_editor.set_content("\r\n".join(req_lines))
+
+        self._host_edit.setText(entry.host)
+        self._port_spin.setValue(entry.port)
+        self._https_check.setChecked(entry.is_https)
 
         resp_text = ""
         if entry.status_code:
