@@ -101,7 +101,7 @@ class PositionsEditor(QWidget):
         # Editor
         self._editor = CodeEditor(mode="request")
         self._highlighter = PayloadHighlighter(self._editor.document())
-        self._editor.textChanged.connect(self._count_positions)
+        self._editor.textChanged.connect(self._on_text_changed)
         layout.addWidget(self._editor, 1)
 
         self._editor.send_to_decoder.connect(self.send_to_decoder.emit)
@@ -143,12 +143,79 @@ class PositionsEditor(QWidget):
         text = re.sub(r"([a-zA-Z_][a-zA-Z0-9_]*)=([^&\s\r\n]+)", replace_val, text)
         self._editor.setPlainText(text)
 
+    def _on_text_changed(self):
+        self._count_positions()
+        self._sync_content_length()
+
     def _count_positions(self):
         text = self._editor.toPlainText()
         markers = re.findall(r"§([^§]*)§", text)
         count = len(markers)
         self._positions_label.setText(f"{count} position{'s' if count != 1 else ''}")
         self.positions_changed.emit(count, markers)
+
+    def _sync_content_length(self):
+        """Automatically update Content-Length: header in template editor."""
+        content = self._editor.toPlainText()
+        parts = content.replace("\r\n", "\n").split("\n\n", 1)
+        if len(parts) < 2:
+            return
+        
+        body = parts[1]
+        length = len(body.encode("utf-8"))
+        
+        # Check if length changed
+        match = re.search(r"Content-Length:\s*(\d+)", content, re.I)
+        if match:
+            current_len = int(match.group(1))
+            if current_len == length:
+                return
+        
+        new_content = re.sub(r"Content-Length:\s*\d+", f"Content-Length: {length}", content, flags=re.I)
+        if new_content == content and "Content-Length:" not in content.lower():
+            # Inject after Host or request line
+            lines = content.split("\n")
+            if len(lines) > 1:
+                lines.insert(2, f"Content-Length: {length}\r")
+                new_content = "\n".join(lines)
+        
+        if new_content != content:
+            # Block signals to avoid recursion during update
+            self._editor.blockSignals(True)
+            cur = self._editor.textCursor()
+            old_pos = cur.position()
+            self._editor.setPlainText(new_content)
+            cur.setPosition(min(old_pos, len(new_content)))
+            self._editor.setTextCursor(cur)
+            self._editor.blockSignals(False)
+
+    def set_host(self, host: str):
+        self._sync_host_header(host)
+
+    def _sync_host_header(self, host):
+        """Automatically update Host: header in text editor when target Host field changes."""
+        if not host.strip():
+            return
+        content = self._editor.toPlainText()
+        # Find and replace Host: line
+        new_content = re.sub(r"Host: [^\r\n]*", f"Host: {host}", content, flags=re.IGNORECASE)
+        if new_content == content and "Host:" not in content.lower() and "HTTP/" in content:
+            # If Host: is missing, inject it after request line
+            lines = content.split("\n")
+            if lines:
+                lines.insert(1, f"Host: {host}\r")
+                new_content = "\n".join(lines)
+        
+        if new_content != content:
+            # Block signals to avoid recursion during host sync
+            self._editor.blockSignals(True)
+            cur = self._editor.textCursor()
+            old_pos = cur.position()
+            self._editor.setPlainText(new_content)
+            cur.setPosition(min(old_pos, len(new_content)))
+            self._editor.setTextCursor(cur)
+            self._editor.blockSignals(False)
+            self._count_positions()
 
     def set_request(self, raw: str):
         self._editor.setPlainText(raw)
@@ -635,6 +702,14 @@ class IntruderWorker(QObject):
             
             request = final_req
 
+            # DYNAMIC CONTENT-LENGTH UPDATE FOR EACH PAYLOAD
+            # This ensures we don't get "Too much data" or "Too little data" errors
+            parts = request.replace("\r\n", "\n").split("\n\n", 1)
+            if len(parts) > 1:
+                body_bytes = parts[1].encode("utf-8", errors="replace")
+                new_len = len(body_bytes)
+                request = re.sub(r"(Content-Length:)\s*\d+", rf"\1 {new_len}", request, flags=re.I)
+
             try:
                 resp = self.engine.send_raw_request(
                     self.host, self.port, self.is_https, request, timeout=self.timeout
@@ -705,7 +780,7 @@ class IntruderTab(QWidget):
 
         # ── Positions tab
         self._positions_editor = PositionsEditor()
-        self._positions_editor.send_to_decoder.connect(self.send_to_decoder.emit)
+        self._target_host.textChanged.connect(self._positions_editor.set_host)
         self._tabs.addTab(self._positions_editor, "Positions")
 
         # ── Payloads tab
@@ -930,9 +1005,6 @@ class IntruderTab(QWidget):
 
     def load_from_flow(self, entry):
         """Load a flow into the intruder."""
-        self._target_host.setText(entry.host)
-        self._target_port.setValue(entry.port)
-        self._target_https.setChecked(entry.is_https)
         req_lines = [f"{entry.method} {entry.path} HTTP/1.1"]
         for k, v in entry.request_headers_raw.items():
             req_lines.append(f"{k}: {v}")
@@ -942,4 +1014,9 @@ class IntruderTab(QWidget):
         except Exception:
             pass
         self._positions_editor.set_request("\r\n".join(req_lines))
+        
+        self._target_host.setText(entry.host)
+        self._target_port.setValue(entry.port)
+        self._target_https.setChecked(entry.is_https)
+
         self._tabs.setCurrentIndex(1)

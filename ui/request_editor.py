@@ -236,6 +236,7 @@ class RequestEditor(QWidget):
     Full request or response editor with Raw / Pretty / Hex / Base64 views.
     """
     content_changed = Signal(str)  # emits raw text when edited
+    textChanged = Signal()
     send_to_decoder = Signal(str)
 
     def __init__(self, title: str = "Request", mode: str = "request",
@@ -248,6 +249,7 @@ class RequestEditor(QWidget):
 
         self._setup_ui()
         self._raw_editor.send_to_decoder.connect(self.send_to_decoder.emit)
+        self._raw_editor.textChanged.connect(self.textChanged.emit)
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)

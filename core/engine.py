@@ -672,92 +672,52 @@ class ProxyEngine(QObject):
 
     # ── Manual Repeater Request ────────────────────────────────────────────
 
-    def send_raw_request(self, host: str, port: int, is_https: bool, raw: str, timeout: int = 10) -> str:
+    def send_raw_request(self, host: str, port: int, is_https: bool, raw: str, timeout: int = 15) -> str:
         """
-        Send a raw HTTP request and return the raw response.
+        Send a raw HTTP request and return the raw response, decoded.
         """
-        import socket
-        import ssl as ssl_module
-
+        import httpx
         try:
+            # Parse raw request
             lines = raw.replace("\r\n", "\n").split("\n")
-            # Parse request line
             first = lines[0].strip()
             parts = first.split(" ", 2)
             method = parts[0] if parts else "GET"
             path = parts[1] if len(parts) > 1 else "/"
 
-            # Parse headers
             headers = {}
-            i = 1
-            while i < len(lines) and lines[i].strip():
-                if ":" in lines[i]:
-                    k, v = lines[i].split(":", 1)
-                    headers[k.strip()] = v.strip()
-                i += 1
-
-            # Body - Split by the blank line after headers
-            parts = raw.replace("\r\n", "\n").split("\n\n", 1)
-            body_bytes = b""
-            if len(parts) > 1:
-                # Use raw parts if possible to avoid split/join issues
-                body_bytes = parts[1].encode("utf-8", errors="replace")
-
-            # Build raw HTTP
-            req_lines = [f"{method} {path} HTTP/1.1"]
-            for k, v in headers.items():
-                # Avoid duplicate Content-Length if we are calculating it
-                if k.lower() == "content-length":
-                    continue
-                req_lines.append(f"{k}: {v}")
-            
-            if body_bytes:
-                req_lines.append(f"Content-Length: {len(body_bytes)}")
-            
-            req_lines.append("")
-            header_bytes = ("\r\n".join(req_lines) + "\r\n").encode("ascii", errors="replace")
-            
-            raw_request = header_bytes + body_bytes
-
-            # Open socket
-            sock = socket.create_connection((host, port), timeout=timeout)
-            if is_https:
-                ctx = ssl_module.create_default_context()
-                ctx.check_hostname = False
-                ctx.verify_mode = ssl_module.CERT_NONE
-                sock = ctx.wrap_socket(sock, server_hostname=host)
-
-            sock.sendall(raw_request)
-
-            # Read response
-            response_data = b""
-            content_length = -1
-            header_done = False
-            
-            while True:
-                try:
-                    chunk = sock.recv(32768)
-                    if not chunk:
-                        break
-                    response_data += chunk
-                    
-                    if not header_done and b"\r\n\r\n" in response_data:
-                        header_done = True
-                        header_part = response_data.split(b"\r\n\r\n")[0].decode("ascii", errors="replace").lower()
-                        import re
-                        match = re.search(r"content-length:\s*(\d+)", header_part)
-                        if match:
-                            content_length = int(match.group(1))
-                    
-                    if header_done and content_length >= 0:
-                        body_part = response_data.split(b"\r\n\r\n", 1)[1]
-                        if len(body_part) >= content_length:
-                            break # Finished reading body
-                except socket.timeout:
+            for line in lines[1:]:
+                if not line.strip():
                     break
+                if ":" in line:
+                    k, v = line.split(":", 1)
+                    headers[k.strip()] = v.strip()
 
-            sock.close()
-            return response_data.decode("utf-8", errors="replace")
+            # Extract body
+            body_parts = raw.replace("\r\n", "\n").split("\n\n", 1)
+            body = body_parts[1].encode("utf-8", errors="replace") if len(body_parts) > 1 else b""
+
+            # Reconstruct URL
+            scheme = "https" if is_https else "http"
+            url = f"{scheme}://{host}:{port}{path}"
+
+            # Use httpx for automatic decompression and chunking
+            with httpx.Client(verify=False, timeout=timeout, follow_redirects=False) as client:
+                res = client.request(method, url, headers=headers, content=body)
+                
+                # Build raw-like response string for display
+                resp_lines = [f"HTTP/1.1 {res.status_code} {res.reason_phrase}"]
+                for k, v in res.headers.items():
+                    resp_lines.append(f"{k}: {v}")
+                
+                resp_lines.append("")
+                try:
+                    # Prefer text content (will be decoded/decompressed)
+                    resp_lines.append(res.text)
+                except Exception:
+                    resp_lines.append(res.content.decode("utf-8", errors="replace"))
+                
+                return "\r\n".join(resp_lines)
 
         except Exception as e:
             return f"Error: {e}"
