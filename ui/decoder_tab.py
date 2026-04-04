@@ -278,7 +278,8 @@ class DecoderTab(QWidget):
         ]:
             btn = QPushButton(label)
             btn.setFixedHeight(24)
-            btn.setFixedWidth(56)
+            btn.setMinimumWidth(56) # Dynamic width instead of fixed
+            btn.setStyleSheet(f"padding: 0 4px; font-size: 11px;")
             btn.setToolTip(op)
             btn.setProperty("op", op)
             btn.clicked.connect(self._quick_op)
