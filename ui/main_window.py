@@ -1,5 +1,5 @@
 """
-Main Window - Burp Suite-like main application window.
+Main Window - HESPIA Suite-like main application window.
 """
 import os
 from PySide6.QtWidgets import (
@@ -16,9 +16,9 @@ from PySide6.QtGui import (
     QLinearGradient, QKeySequence
 )
 from ui.styles import (
-    MAIN_STYLESHEET, BURP_ORANGE, BURP_BG, BURP_BG_DARK, BURP_BG_LIGHT,
-    BURP_TEXT, BURP_BORDER, BURP_TEXT_DIM, BURP_SUCCESS, BURP_ERROR,
-    BURP_INFO_BG, BANNER_START_STYLE, BANNER_STOP_STYLE
+    MAIN_STYLESHEET, HESPIA_ORANGE, HESPIA_BG, HESPIA_BG_DARK, HESPIA_BG_LIGHT,
+    HESPIA_TEXT, HESPIA_BORDER, HESPIA_TEXT_DIM, HESPIA_SUCCESS, HESPIA_ERROR,
+    HESPIA_INFO_BG, BANNER_START_STYLE, BANNER_STOP_STYLE
 )
 from ui.proxy_tab import ProxyTab
 from ui.repeater_tab import RepeaterTab
@@ -26,6 +26,7 @@ from ui.intruder_tab import IntruderTab
 from ui.decoder_tab import DecoderTab
 from ui.comparer_tab import ComparerTab
 from ui.target_tab import TargetTab
+from ui.help_suite import HespiaHelpSuite
 from core.engine import ProxyEngine
 
 
@@ -64,7 +65,7 @@ class ProxyConfigDialog(QDialog):
             "🔒 For HTTPS interception, install the CA:\n"
             "  Browse to http://mitm.it while using this proxy"
         )
-        ssl_help.setStyleSheet(f"color:{BURP_TEXT_DIM}; font-size:10px;")
+        ssl_help.setStyleSheet(f"color:{HESPIA_TEXT_DIM}; font-size:10px;")
         gl.addWidget(ssl_help)
 
         layout.addWidget(grp)
@@ -90,7 +91,7 @@ class LoggerWidget(QWidget):
 
         toolbar = QFrame()
         toolbar.setFixedHeight(32)
-        toolbar.setStyleSheet(f"background:{BURP_BG_DARK}; border-bottom:1px solid {BURP_BORDER};")
+        toolbar.setStyleSheet(f"background:{HESPIA_BG_DARK}; border-bottom:1px solid {HESPIA_BORDER};")
         tl = QHBoxLayout(toolbar)
         tl.setContentsMargins(8, 4, 8, 4)
         tl.setSpacing(6)
@@ -113,7 +114,7 @@ class LoggerWidget(QWidget):
         font.setPointSize(10)
         self._editor.setFont(font)
         self._editor.setStyleSheet(
-            f"QPlainTextEdit {{ background:{BURP_BG_LIGHT}; color:{BURP_TEXT}; border:none; padding:4px; }}"
+            f"QPlainTextEdit {{ background:{HESPIA_BG_LIGHT}; color:{HESPIA_TEXT}; border:none; padding:4px; }}"
         )
         layout.addWidget(self._editor, 1)
 
@@ -158,7 +159,7 @@ class DashboardWidget(QWidget):
         header.setFixedHeight(120)
         header.setStyleSheet(f"""
             background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffffff, stop:1 #f8f8f8);
-            border-bottom: 1px solid {BURP_BORDER};
+            border-bottom: 1px solid {HESPIA_BORDER};
         """)
         hl = QHBoxLayout(header)
         hl.setContentsMargins(30, 0, 30, 0)
@@ -166,10 +167,10 @@ class DashboardWidget(QWidget):
         title_col = QVBoxLayout()
         title_col.setContentsMargins(0, 20, 0, 20)
         t1 = QLabel("Workbench")
-        t1.setStyleSheet(f"color:{BURP_TEXT}; font-size:28px; font-weight:700; font-family:'Segoe UI Semibold';")
+        t1.setStyleSheet(f"color:{HESPIA_TEXT}; font-size:28px; font-weight:700; font-family:'Segoe UI Semibold';")
         title_col.addWidget(t1)
         t2 = QLabel("Welcome to Hespia. Monitor and manage your security testing tasks here.")
-        t2.setStyleSheet(f"color:{BURP_TEXT_DIM}; font-size:13px;")
+        t2.setStyleSheet(f"color:{HESPIA_TEXT_DIM}; font-size:13px;")
         title_col.addWidget(t2)
         hl.addLayout(title_col)
         hl.addStretch()
@@ -193,11 +194,11 @@ class DashboardWidget(QWidget):
         pl.setSpacing(12)
 
         self._proxy_status = QLabel("● SERVICE STOPPED")
-        self._proxy_status.setStyleSheet(f"color:{BURP_ERROR}; font-size:15px; font-weight:800; letter-spacing:1px;")
+        self._proxy_status.setStyleSheet(f"color:{HESPIA_ERROR}; font-size:15px; font-weight:800; letter-spacing:1px;")
         pl.addWidget(self._proxy_status)
 
         self._proxy_addr = QLabel("The proxy listener is not active. Click start to begin capturing traffic.")
-        self._proxy_addr.setStyleSheet(f"color:{BURP_TEXT_DIM}; font-size:12px;")
+        self._proxy_addr.setStyleSheet(f"color:{HESPIA_TEXT_DIM}; font-size:12px;")
         self._proxy_addr.setWordWrap(True)
         pl.addWidget(self._proxy_addr)
 
@@ -228,11 +229,11 @@ class DashboardWidget(QWidget):
         for attr, label in [("_stat_requests", "Total Flows"), ("_stat_intercepted", "Intercepted"), ("_stat_hosts", "Unique Hosts")]:
             scol = QVBoxLayout()
             v = QLabel("0")
-            v.setStyleSheet(f"color:{BURP_ORANGE}; font-size:28px; font-weight:bold;")
+            v.setStyleSheet(f"color:{HESPIA_ORANGE}; font-size:28px; font-weight:bold;")
             setattr(self, attr, v)
             scol.addWidget(v, 0, Qt.AlignmentFlag.AlignCenter)
             l = QLabel(label.upper())
-            l.setStyleSheet(f"color:{BURP_TEXT_DIM}; font-size:10px; font-weight:bold; letter-spacing:1px;")
+            l.setStyleSheet(f"color:{HESPIA_TEXT_DIM}; font-size:10px; font-weight:bold; letter-spacing:1px;")
             scol.addWidget(l, 0, Qt.AlignmentFlag.AlignCenter)
             stats_row.addLayout(scol)
         sl.addLayout(stats_row)
@@ -244,7 +245,7 @@ class DashboardWidget(QWidget):
         intercept_card, il = self._make_card("Interception Rules")
         il.setContentsMargins(24, 24, 24, 24)
         il.setSpacing(8)
-        il.addWidget(QLabel("● Request Interception: <span style='color:%s;'>OFF</span>" % BURP_ERROR))
+        il.addWidget(QLabel("● Request Interception: <span style='color:%s;'>OFF</span>" % HESPIA_ERROR))
         il.addWidget(QLabel("● Filter: All traffic"))
         il.addWidget(QLabel("● Scope: Global"))
         il.addStretch()
@@ -259,7 +260,7 @@ class DashboardWidget(QWidget):
         gl.setSpacing(8)
         for step in ["1. Start proxy service", "2. Configure browser proxy (8080)", "3. Install CA cert (mitm.it)", "4. Enable intercept (Proxy tab)"]:
             s = QLabel(step)
-            s.setStyleSheet(f"color:{BURP_TEXT}; font-size:12px;")
+            s.setStyleSheet(f"color:{HESPIA_TEXT}; font-size:12px;")
             gl.addWidget(s)
         gl.addStretch()
         cl.addWidget(guide_card, 1, 1)
@@ -270,7 +271,7 @@ class DashboardWidget(QWidget):
         self._quick_log = QPlainTextEdit()
         self._quick_log.setReadOnly(True)
         self._quick_log.setPlaceholderText("Capture events will appear here...")
-        self._quick_log.setStyleSheet(f"border:none; border-bottom-left-radius:6px; border-bottom-right-radius:6px; background:#ffffff; color:{BURP_TEXT}; font-family:Consolas; font-size:11px; padding: 10px;")
+        self._quick_log.setStyleSheet(f"border:none; border-bottom-left-radius:6px; border-bottom-right-radius:6px; background:#ffffff; color:{HESPIA_TEXT}; font-family:Consolas; font-size:11px; padding: 10px;")
         ll.addWidget(self._quick_log)
         cl.addWidget(log_card, 2, 0, 1, 2) # Span across (row 2, col 0, span 1 row, 2 cols)
 
@@ -282,7 +283,7 @@ class DashboardWidget(QWidget):
         f.setStyleSheet(f"""
             QFrame {{
                 background: white;
-                border: 1px solid {BURP_BORDER};
+                border: 1px solid {HESPIA_BORDER};
                 border-radius: 6px;
             }}
         """)
@@ -293,11 +294,11 @@ class DashboardWidget(QWidget):
         
         hdr = QFrame()
         hdr.setFixedHeight(34)
-        hdr.setStyleSheet(f"background:{BURP_BG_DARK}; border:none; border-bottom:1px solid {BURP_BORDER}; border-top-left-radius:6px; border-top-right-radius:6px;")
+        hdr.setStyleSheet(f"background:{HESPIA_BG_DARK}; border:none; border-bottom:1px solid {HESPIA_BORDER}; border-top-left-radius:6px; border-top-right-radius:6px;")
         hl = QHBoxLayout(hdr)
         hl.setContentsMargins(12, 0, 12, 0)
         tl = QLabel(title.upper())
-        tl.setStyleSheet(f"color:{BURP_TEXT}; font-size:11px; font-weight:bold; letter-spacing:1px;")
+        tl.setStyleSheet(f"color:{HESPIA_TEXT}; font-size:11px; font-weight:bold; letter-spacing:1px;")
         hl.addWidget(tl)
         l.addWidget(hdr)
 
@@ -311,14 +312,14 @@ class DashboardWidget(QWidget):
 
     def set_running(self, host: str, port: int):
         self._proxy_status.setText("● SERVICE RUNNING")
-        self._proxy_status.setStyleSheet(f"color:{BURP_SUCCESS}; font-size:16px; font-weight:bold; letter-spacing:1px;")
+        self._proxy_status.setStyleSheet(f"color:{HESPIA_SUCCESS}; font-size:16px; font-weight:bold; letter-spacing:1px;")
         self._proxy_addr.setText(f"Hespia listening on {host}:{port}")
         self._start_btn.setEnabled(False)
         self._stop_btn.setEnabled(True)
 
     def set_stopped(self):
         self._proxy_status.setText("● SERVICE STOPPED")
-        self._proxy_status.setStyleSheet(f"color:{BURP_ERROR}; font-size:16px; font-weight:bold; letter-spacing:1px;")
+        self._proxy_status.setStyleSheet(f"color:{HESPIA_ERROR}; font-size:16px; font-weight:bold; letter-spacing:1px;")
         self._proxy_addr.setText("Proxy listener is not active.")
         self._start_btn.setEnabled(True)
         self._stop_btn.setEnabled(False)
@@ -370,7 +371,7 @@ class MainWindow(QMainWindow):
         banner.setStyleSheet(
             f"background: qlineargradient(x1:0,y1:0,x2:0,y2:1,"
             f" stop:0 #fff, stop:1 #f0f0f0);"
-            f" border-bottom: 1px solid {BURP_BORDER};"
+            f" border-bottom: 1px solid {HESPIA_BORDER};"
         )
         bl = QHBoxLayout(banner)
         bl.setContentsMargins(12, 4, 12, 4)
@@ -378,13 +379,13 @@ class MainWindow(QMainWindow):
 
         logo = QLabel("Hespia")
         logo.setStyleSheet(
-            f"color:{BURP_ORANGE}; font-size:18px; font-weight:bold; letter-spacing:1.5px;"
+            f"color:{HESPIA_ORANGE}; font-size:18px; font-weight:bold; letter-spacing:1.5px;"
         )
         bl.addWidget(logo)
 
         sep = QFrame()
         sep.setFrameShape(QFrame.Shape.VLine)
-        sep.setStyleSheet(f"color:{BURP_BORDER}44;")
+        sep.setStyleSheet(f"color:{HESPIA_BORDER}44;")
         bl.addWidget(sep)
 
         # Quick-start controls in banner
@@ -404,14 +405,14 @@ class MainWindow(QMainWindow):
         bl.addWidget(self._banner_stop_btn)
 
         self._banner_status = QLabel("Proxy: Stopped")
-        self._banner_status.setStyleSheet(f"color:{BURP_TEXT_DIM}; font-size:11px;")
+        self._banner_status.setStyleSheet(f"color:{HESPIA_TEXT_DIM}; font-size:11px;")
         bl.addWidget(self._banner_status)
 
         bl.addStretch()
 
         # Request counter in banner
         self._banner_req_count = QLabel("0 requests")
-        self._banner_req_count.setStyleSheet(f"color:{BURP_ORANGE}; font-size:11px; font-weight:bold;")
+        self._banner_req_count.setStyleSheet(f"color:{HESPIA_ORANGE}; font-size:11px; font-weight:bold;")
         bl.addWidget(self._banner_req_count)
 
         layout.addWidget(banner)
@@ -476,115 +477,8 @@ class MainWindow(QMainWindow):
         layout.addWidget(self._main_tabs, 1)
 
     def _make_help_tab(self) -> QWidget:
-        w = QWidget()
-        l = QVBoxLayout(w)
-        l.setContentsMargins(0, 0, 0, 0)
-        l.setSpacing(0)
-
-        # Documentation Sub-Tabs
-        subtabs = QTabWidget()
-        subtabs.setStyleSheet(f"background-color: {BURP_BG}; border: none;")
-
-        # --- Tab 1: Getting Started ---
-        gs_tab = self._create_doc_pane(f"""
-            <h1 style='color:{BURP_ORANGE};'>⚡ Getting Started with Hespia</h1>
-            <p>Hespia is a professional-grade web security toolkit. follow these steps to begin testing:</p>
-            <h3>1. Start the Proxy</h3>
-            <p>On the main banner at the top, click <b>▶ Start Proxy</b>. By default, Hespia listens on <b>127.0.0.1:8080</b>.</p>
-            <h3>2. Configure Browser Proxy</h3>
-            <p><b>Recommended: Mozilla Firefox</b>. Firefox supports independent proxy settings and its own certificate store, allowing you to isolate your security testing from the rest of your system traffic.</p>
-            <ul style='line-height:1.8;'>
-                <li>Open Firefox <b>Settings → General</b></li>
-                <li>Scroll to <b>Network Settings → Settings</b></li>
-                <li>Select <b>Manual proxy configuration</b></li>
-                <li>HTTP Proxy: <b>127.0.0.1</b> | Port: <b>8080</b></li>
-                <li>Check the box <b>Also use this proxy for HTTPS</b></li>
-                <li>Click <b>OK</b>. All Firefox traffic is now flowing through Hespia.</li>
-            </ul>
-        """)
-        subtabs.addTab(gs_tab, "Getting Started")
-
-        # --- Tab 2: CA Certificate ---
-        cert_tab = self._create_doc_pane(f"""
-            <h1 style='color:{BURP_ORANGE};'>🔒 Installing CA Certificate</h1>
-            <p>To intercept HTTPS (encrypted) traffic, Hespia must act as a 'Man-in-the-Middle'. Browsers will block this by default until you trust Hespia's Root CA.</p>
-            <h3>Step-by-Step Certificate Installation:</h3>
-            <ol style='line-height:1.8;'>
-                <li>Ensure Hespia is <b>Running</b> and your browser proxy is configured.</li>
-                <li>Navigate to: <b style='color:#2563eb;'>http://mitm.it</b></li>
-                <li>Under the <b>Windows</b> or <b>Other</b> icon, click the <b>Download</b> button.</li>
-                <li><b>Firefox Setup:</b> Open Firefox Settings → Privacy & Security → Certificates → <b>View Certificates</b>. Click <b>Import...</b>, select the downloaded file, check <b>Trust this CA to identify websites</b>, and click OK.</li>
-                <li><b>System/Chrome Setup:</b> Double-click the <b>.cer</b> file → Install Certificate → Local Machine → Place in <b>Trusted Root Certification Authorities</b> store.</li>
-            </ol>
-            <p style='background-color:{BURP_INFO_BG}; padding:10px; border-radius:4px;'><b>Tip:</b> If mitm.it doesn't load, ensure the proxy is active and you are navigating to the exact URL (no https).</p>
-        """)
-        subtabs.addTab(cert_tab, "CA Certificate")
-
-        # --- Tab 3: Proxy & Intercept ---
-        proxy_tab = self._create_doc_pane(f"""
-            <h1 style='color:{BURP_ORANGE};'>🛡️ Proxy & Intercept</h1>
-            <p>This tab captures everything. Use it to observe flow data or pause traffic for modification.</p>
-            <h3>1. HTTP History</h3>
-            <p>Every request/response is recorded here. Right-click any row to view options like <b>Send to Repeater</b> or <b>Send to Intruder</b>.</p>
-            <h3>2. Manual Intercept</h3>
-            <p>Toggle <b>Intercept is ON</b> to pause requests in real-time.</p>
-            <ul style='line-height:1.6;'>
-                <li><b>Editable Editor:</b> Modify headers (User-Agent, Cookies) or POST data before it leaves your machine.</li>
-                <li><b>Forward:</b> Release the request to the destination server.</li>
-                <li><b>Drop:</b> Kill the connection entirely before it reaches the server.</li>
-                <li><b>Forward All:</b> Flush the entire intercepted queue at once (useful for multiple background API calls).</li>
-            </ul>
-        """)
-        subtabs.addTab(proxy_tab, "Proxy / Intercept")
-
-        # --- Tab 4: Repeater ---
-        rep_tab = self._create_doc_pane(f"""
-            <h1 style='color:{BURP_ORANGE};'>🔄 HTTP Repeater</h1>
-            <p>Repeater allows you to manually re-send a single request over and over while tweaking parameters.</p>
-            <h3>Features:</h3>
-            <ul>
-                <li><b>Host Sync:</b> Hespia automatically updates the 'Host:' header to match the destination URL, preventing common 404/Invalid Host errors.</li>
-                <li><b>Advanced History:</b> Use the <b>&lt;</b> and <b>&gt;</b> navigation buttons to jump between every version of the request you've sent.</li>
-                <li><b>Raw Access:</b> Full manual control over HTTP methods, versions, and headers.</li>
-            </ul>
-        """)
-        subtabs.addTab(rep_tab, "Repeater")
-
-        # --- Tab 5: Intruder ---
-        int_tab = self._create_doc_pane(f"""
-            <h1 style='color:{BURP_ORANGE};'>⚔️ Intruder (Automated Attacks)</h1>
-            <p>Used for brute-forcing, ID enumeration, and automated fuzzing.</p>
-            <h3>How to use:</h3>
-            <ol>
-                <li><b>Markers (§):</b> Highlight text in the request and click <b>Add §</b> to make it a payload position.</li>
-                <li><b>Attack Modes:</b>
-                    <ul>
-                        <li><b>Sniper:</b> One list, one marker at a time. High performance.</li>
-                        <li><b>Pitchfork:</b> Parallel lists for parallel markers (useful for synced creds).</li>
-                        <li><b>Cluster Bomb:</b> Every combination of all payload lists (useful for exhaustive brute force).</li>
-                    </ul>
-                </li>
-                <li><b>Start:</b> Choose your payload list and click <b>Start Attack</b>.</li>
-            </ol>
-        """)
-        subtabs.addTab(int_tab, "Intruder")
-
-        l.addWidget(subtabs)
-        return w
-
-    def _create_doc_pane(self, content: str) -> QTextEdit:
-        doc = QTextEdit()
-        doc.setReadOnly(True)
-        html = f"""
-        <html><body style='background-color:{BURP_BG}; color:{BURP_TEXT}; font-family:Segoe UI; font-size:13px; line-height:1.6; padding:24px;'>
-            {content}
-            <br><br><hr style='border: 0; border-top: 1px solid {BURP_BORDER}'>
-            <p style='color:{BURP_TEXT_DIM}; font-size:11px;'>Hespia Advanced Security Suite v1.0.0 Documentation</p>
-        </body></html>
-        """
-        doc.setHtml(html)
-        doc.setStyleSheet("border: none;")
-        return doc
+        self._help_suite = HespiaHelpSuite()
+        return self._help_suite
 
     def _connect_engine(self):
         sig = self._engine.signals
@@ -658,7 +552,7 @@ class MainWindow(QMainWindow):
         sb = self.statusBar()
         # Left: proxy status
         self._status_proxy_lbl = QLabel("● Proxy: Stopped")
-        self._status_proxy_lbl.setStyleSheet(f"color:{BURP_ERROR}; font-weight:bold;")
+        self._status_proxy_lbl.setStyleSheet(f"color:{HESPIA_ERROR}; font-weight:bold;")
         sb.addWidget(self._status_proxy_lbl)
 
         # Center: message
@@ -667,7 +561,7 @@ class MainWindow(QMainWindow):
 
         # Right: counters
         self._status_reqs = QLabel("Requests: 0")
-        self._status_reqs.setStyleSheet(f"color:{BURP_TEXT_DIM};")
+        self._status_reqs.setStyleSheet(f"color:{HESPIA_TEXT_DIM};")
         sb.addPermanentWidget(self._status_reqs)
 
     # ── Proxy lifecycle slots ──────────────────────────────────────────────
@@ -700,9 +594,9 @@ class MainWindow(QMainWindow):
         self._is_running = True
         self._dashboard.set_running(host, port)
         self._status_proxy_lbl.setText(f"● Proxy: {host}:{port}")
-        self._status_proxy_lbl.setStyleSheet(f"color:{BURP_SUCCESS}; font-weight:bold;")
+        self._status_proxy_lbl.setStyleSheet(f"color:{HESPIA_SUCCESS}; font-weight:bold;")
         self._banner_status.setText(f"Proxy: {host}:{port}")
-        self._banner_status.setStyleSheet(f"color:{BURP_SUCCESS}; font-size:11px; font-weight:bold;")
+        self._banner_status.setStyleSheet(f"color:{HESPIA_SUCCESS}; font-size:11px; font-weight:bold;")
         self._banner_start_btn.setEnabled(False)
         self._banner_stop_btn.setEnabled(True)
         self._status_msg.setText(f"Listening on {host}:{port} — Configure browser proxy to use this address")
@@ -711,9 +605,9 @@ class MainWindow(QMainWindow):
         self._is_running = False
         self._dashboard.set_stopped()
         self._status_proxy_lbl.setText("● Proxy: Stopped")
-        self._status_proxy_lbl.setStyleSheet(f"color:{BURP_ERROR}; font-weight:bold;")
+        self._status_proxy_lbl.setStyleSheet(f"color:{HESPIA_ERROR}; font-weight:bold;")
         self._banner_status.setText("Proxy: Stopped")
-        self._banner_status.setStyleSheet(f"color:{BURP_TEXT_DIM}; font-size:11px;")
+        self._banner_status.setStyleSheet(f"color:{HESPIA_TEXT_DIM}; font-size:11px;")
         self._banner_start_btn.setEnabled(True)
         self._banner_stop_btn.setEnabled(False)
         self._status_msg.setText("Proxy stopped")
@@ -870,7 +764,7 @@ class MainWindow(QMainWindow):
         QMessageBox.about(
             self, "About Hespia",
             "<b>Hespia</b> v1.0.0<br><br>"
-            "A Burp Suite-inspired web proxy tool.<br>"
+            "A HESPIA Suite-inspired web proxy tool.<br>"
             "Built with Python, mitmproxy, and PySide6.<br><br>"
             "Features:<br>"
             "• HTTP/HTTPS Intercept<br>"

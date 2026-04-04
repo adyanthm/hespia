@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal, QThread, QObject, QTimer
 from PySide6.QtGui import QColor, QTextCharFormat, QFont, QSyntaxHighlighter, QTextDocument
 from ui.request_editor import RequestEditor, CodeEditor, RequestResponseSplitter
-from ui.styles import BURP_ORANGE, BURP_BG, BURP_BG_DARK, BURP_TEXT, BURP_BORDER, BURP_TEXT_DIM
+from ui.styles import HESPIA_ORANGE, HESPIA_BG, HESPIA_BG_DARK, HESPIA_TEXT, HESPIA_BORDER, HESPIA_TEXT_DIM
 
 
 # ─── Payload Position Highlighter ─────────────────────────────────────────────
@@ -41,6 +41,7 @@ class PayloadHighlighter(QSyntaxHighlighter):
 class PositionsEditor(QWidget):
     """Editor for marking payload positions in a request using § markers."""
     send_to_decoder = Signal(str)
+    positions_changed = Signal(int, list)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -54,7 +55,7 @@ class PositionsEditor(QWidget):
         # Toolbar
         tb = QFrame()
         tb.setFixedHeight(36)
-        tb.setStyleSheet(f"background:{BURP_BG_DARK}; border-bottom:1px solid {BURP_BORDER};")
+        tb.setStyleSheet(f"background:{HESPIA_BG_DARK}; border-bottom:1px solid {HESPIA_BORDER};")
         tl = QHBoxLayout(tb)
         tl.setContentsMargins(8, 4, 8, 4)
         tl.setSpacing(6)
@@ -63,12 +64,13 @@ class PositionsEditor(QWidget):
         tl.addWidget(attack_label)
         self._attack_combo = QComboBox()
         self._attack_combo.addItems(["Sniper", "Battering ram", "Pitchfork", "Cluster bomb"])
+        self._attack_combo.setCurrentText("Cluster bomb")
         self._attack_combo.setFixedWidth(160)
         tl.addWidget(self._attack_combo)
 
         sep = QFrame()
         sep.setFrameShape(QFrame.Shape.VLine)
-        sep.setStyleSheet(f"color:{BURP_BORDER};")
+        sep.setStyleSheet(f"color:{HESPIA_BORDER};")
         tl.addWidget(sep)
 
         self._add_btn = QPushButton("§ Add §")
@@ -91,7 +93,7 @@ class PositionsEditor(QWidget):
         tl.addStretch()
 
         self._positions_label = QLabel("0 positions")
-        self._positions_label.setStyleSheet(f"color:{BURP_ORANGE}; font-size:11px; font-weight:bold;")
+        self._positions_label.setStyleSheet(f"color:{HESPIA_ORANGE}; font-size:11px; font-weight:bold;")
         tl.addWidget(self._positions_label)
 
         layout.addWidget(tb)
@@ -103,6 +105,18 @@ class PositionsEditor(QWidget):
         layout.addWidget(self._editor, 1)
 
         self._editor.send_to_decoder.connect(self.send_to_decoder.emit)
+
+    def load_default_template(self):
+        """Populate editor with a sample login request."""
+        default_template = (
+            "POST /login HTTP/1.1\n"
+            "Host: target-app.com\n"
+            "Content-Type: application/x-www-form-urlencoded\n"
+            "Content-Length: 35\n"
+            "\n"
+            "user=§admin§&pass=§password§"
+        )
+        self._editor.setPlainText(default_template)
 
     def _add_marker(self):
         cursor = self._editor.textCursor()
@@ -134,12 +148,7 @@ class PositionsEditor(QWidget):
         markers = re.findall(r"§([^§]*)§", text)
         count = len(markers)
         self._positions_label.setText(f"{count} position{'s' if count != 1 else ''}")
-        # Notify parent to update payload sets with names
-        parent = self.parent()
-        while parent and not hasattr(parent, "_payloads_panel"):
-            parent = parent.parent()
-        if parent:
-            parent._payloads_panel.update_sets_count(count, names=markers)
+        self.positions_changed.emit(count, markers)
 
     def set_request(self, raw: str):
         self._editor.setPlainText(raw)
@@ -443,7 +452,7 @@ class AttackResultsTable(QWidget):
         # Filter bar
         fb = QFrame()
         fb.setFixedHeight(32)
-        fb.setStyleSheet(f"background:{BURP_BG_DARK}; border-bottom:1px solid {BURP_BORDER};")
+        fb.setStyleSheet(f"background:{HESPIA_BG_DARK}; border-bottom:1px solid {HESPIA_BORDER};")
         fl = QHBoxLayout(fb)
         fl.setContentsMargins(6, 4, 6, 4)
         fl.setSpacing(6)
@@ -488,11 +497,11 @@ class AttackResultsTable(QWidget):
 
         stats = QFrame()
         stats.setFixedHeight(22)
-        stats.setStyleSheet(f"background:{BURP_BG_DARK};")
+        stats.setStyleSheet(f"background:{HESPIA_BG_DARK};")
         sl = QHBoxLayout(stats)
         sl.setContentsMargins(8, 0, 8, 0)
         self._stats_label = QLabel("0 requests sent")
-        self._stats_label.setStyleSheet(f"color:{BURP_TEXT_DIM}; font-size:11px;")
+        self._stats_label.setStyleSheet(f"color:{HESPIA_TEXT_DIM}; font-size:11px;")
         sl.addWidget(self._stats_label)
         sl.addStretch()
         layout.addWidget(stats)
@@ -509,7 +518,7 @@ class AttackResultsTable(QWidget):
             if col == 2 and status:
                 code = str(status)
                 from ui.styles import HTTP_STATUS_COLORS
-                color = HTTP_STATUS_COLORS.get(code[0], BURP_TEXT)
+                color = HTTP_STATUS_COLORS.get(code[0], HESPIA_TEXT)
                 item.setForeground(QColor(color))
             self._table.setItem(row, col, item)
         self._stats_label.setText(f"{row + 1} requests sent")
@@ -607,7 +616,7 @@ class IntruderWorker(QObject):
             temp_req = self.template
             for val in combo:
                 # If sniper and val is None, we need to preserve the original marker text but without §
-                # Actually, Burp Sniper replaces ONE position at a time.
+                # Actually, HESPIA Sniper replaces ONE position at a time.
                 pass
             
             # Implementation for snippet replacement:
@@ -678,11 +687,11 @@ class IntruderTab(QWidget):
         # Header
         header = QFrame()
         header.setFixedHeight(30)
-        header.setStyleSheet(f"background:{BURP_BG_DARK}; border-bottom:1px solid {BURP_BORDER};")
+        header.setStyleSheet(f"background:{HESPIA_BG_DARK}; border-bottom:1px solid {HESPIA_BORDER};")
         hl = QHBoxLayout(header)
         hl.setContentsMargins(8, 2, 8, 2)
         title = QLabel("Intruder — Automated Attack Tool")
-        title.setStyleSheet(f"color:{BURP_ORANGE}; font-weight:bold; font-size:13px;")
+        title.setStyleSheet(f"color:{HESPIA_ORANGE}; font-weight:bold; font-size:13px;")
         hl.addWidget(title)
         hl.addStretch()
         layout.addWidget(header)
@@ -703,6 +712,12 @@ class IntruderTab(QWidget):
         self._payloads_panel = PayloadsPanel()
         self._tabs.addTab(self._payloads_panel, "Payloads")
 
+        # Connect signals for proper cross-tab synchronization
+        self._positions_editor.positions_changed.connect(self._payloads_panel.update_sets_count)
+
+        # Now that panels are ready, load the default template to trigger counter updates
+        self._positions_editor.load_default_template()
+
         # ── Options tab
         opts_w = self._build_options_tab()
         self._tabs.addTab(opts_w, "Options")
@@ -716,7 +731,7 @@ class IntruderTab(QWidget):
         # ── Attack control bar
         attack_bar = QFrame()
         attack_bar.setFixedHeight(42)
-        attack_bar.setStyleSheet(f"background:{BURP_BG_DARK}; border-top:1px solid {BURP_BORDER};")
+        attack_bar.setStyleSheet(f"background:{HESPIA_BG_DARK}; border-top:1px solid {HESPIA_BORDER};")
         al = QHBoxLayout(attack_bar)
         al.setContentsMargins(8, 4, 8, 4)
         al.setSpacing(8)
@@ -745,7 +760,7 @@ class IntruderTab(QWidget):
         al.addWidget(self._progress)
 
         self._attack_status = QLabel("Ready")
-        self._attack_status.setStyleSheet(f"color:{BURP_TEXT_DIM}; font-size:11px;")
+        self._attack_status.setStyleSheet(f"color:{HESPIA_TEXT_DIM}; font-size:11px;")
         al.addWidget(self._attack_status)
 
         layout.addWidget(attack_bar)

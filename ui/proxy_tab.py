@@ -17,8 +17,8 @@ from PySide6.QtCore import Qt, Signal, QTimer, QSortFilterProxyModel, QRegularEx
 from PySide6.QtGui import QColor, QFont, QAction, QIcon, QKeySequence
 from ui.request_editor import RequestEditor, RequestResponseSplitter
 from ui.styles import (
-    BURP_ORANGE, BURP_BG, BURP_BG_DARK, BURP_BG_LIGHT, BURP_TEXT, BURP_BORDER,
-    BURP_INTERCEPT_ON, BURP_INTERCEPT_OFF, BURP_TEXT_DIM, BURP_WARNING_BG,
+    HESPIA_ORANGE, HESPIA_BG, HESPIA_BG_DARK, HESPIA_BG_LIGHT, HESPIA_TEXT, HESPIA_BORDER,
+    HESPIA_INTERCEPT_ON, HESPIA_INTERCEPT_OFF, HESPIA_TEXT_DIM, HESPIA_WARNING_BG,
     HTTP_STATUS_COLORS, METHOD_COLORS, INTERCEPT_ON_STYLE, INTERCEPT_OFF_STYLE,
     MODERN_FORWARD_STYLE, MODERN_DROP_STYLE, MODERN_ACTION_STYLE
 )
@@ -66,7 +66,7 @@ class HttpHistoryTable(QWidget):
         # ── Toolbar
         toolbar = QFrame()
         toolbar.setFixedHeight(36)
-        toolbar.setStyleSheet(f"background:{BURP_BG_DARK}; border-bottom:1px solid {BURP_BORDER};")
+        toolbar.setStyleSheet(f"background:{HESPIA_BG_DARK}; border-bottom:1px solid {HESPIA_BORDER};")
         tl = QHBoxLayout(toolbar)
         tl.setContentsMargins(6, 4, 6, 4)
         tl.setSpacing(6)
@@ -156,11 +156,11 @@ class HttpHistoryTable(QWidget):
         # ── Bottom status
         status = QFrame()
         status.setFixedHeight(22)
-        status.setStyleSheet(f"background:{BURP_BG_DARK}; border-top:1px solid {BURP_BORDER};")
+        status.setStyleSheet(f"background:{HESPIA_BG_DARK}; border-top:1px solid {HESPIA_BORDER};")
         sl = QHBoxLayout(status)
         sl.setContentsMargins(8, 0, 8, 0)
         self._count_label = QLabel("0 requests")
-        self._count_label.setStyleSheet(f"color:{BURP_TEXT_DIM}; font-size:11px;")
+        self._count_label.setStyleSheet(f"color:{HESPIA_TEXT_DIM}; font-size:11px;")
         sl.addWidget(self._count_label)
         sl.addStretch()
         layout.addWidget(status)
@@ -216,17 +216,17 @@ class HttpHistoryTable(QWidget):
             # Color by status
             if col == COL_STATUS and entry.status_code:
                 code_str = str(entry.status_code)
-                color = HTTP_STATUS_COLORS.get(code_str[0], BURP_TEXT)
+                color = HTTP_STATUS_COLORS.get(code_str[0], HESPIA_TEXT)
                 item.setForeground(QColor(color))
 
             # Color method
             elif col == COL_METHOD:
-                color = METHOD_COLORS.get(entry.method, BURP_TEXT)
+                color = METHOD_COLORS.get(entry.method, HESPIA_TEXT)
                 item.setForeground(QColor(color))
 
             # Highlight edited
             elif col == COL_EDIT and entry.edited:
-                item.setForeground(QColor(BURP_ORANGE))
+                item.setForeground(QColor(HESPIA_ORANGE))
 
             self._table.setItem(row, col, item)
 
@@ -408,7 +408,7 @@ class InterceptPanel(QWidget):
         # ── Top control bar
         ctrl = QFrame()
         ctrl.setFixedHeight(48)
-        ctrl.setStyleSheet(f"background:{BURP_BG_DARK}; border:1px solid {BURP_BORDER}; border-radius:4px;")
+        ctrl.setStyleSheet(f"background:{HESPIA_BG_DARK}; border:1px solid {HESPIA_BORDER}; border-radius:4px;")
         cl = QHBoxLayout(ctrl)
         cl.setContentsMargins(10, 6, 10, 6)
         cl.setSpacing(8)
@@ -501,11 +501,11 @@ class InterceptPanel(QWidget):
         # ── Info bar
         info = QFrame()
         info.setFixedHeight(26)
-        info.setStyleSheet(f"background:{BURP_BG_DARK}; border-top:1px solid {BURP_BORDER};")
+        info.setStyleSheet(f"background:{HESPIA_BG_DARK}; border-top:1px solid {HESPIA_BORDER};")
         il = QHBoxLayout(info)
         il.setContentsMargins(8, 0, 8, 0)
         self._info_label = QLabel("Intercept is off. Enable it to capture requests.")
-        self._info_label.setStyleSheet(f"color:{BURP_TEXT_DIM}; font-size:11px;")
+        self._info_label.setStyleSheet(f"color:{HESPIA_TEXT_DIM}; font-size:11px;")
         il.addWidget(self._info_label)
         il.addStretch()
         layout.addWidget(info)
@@ -764,7 +764,7 @@ class ProxyOptionsPanel(QWidget):
             "the mitmproxy CA certificate. Find it at: ~/.mitmproxy/mitmproxy-ca-cert.pem\n"
             "Or navigate to http://mitm.it in your browser while using this proxy."
         )
-        cert_info.setStyleSheet(f"color:{BURP_TEXT}; background:{BURP_WARNING_BG}; padding:10px; border-radius:4px; border:1px solid {BURP_BORDER};")
+        cert_info.setStyleSheet(f"color:{HESPIA_TEXT}; background:{HESPIA_WARNING_BG}; padding:10px; border-radius:4px; border:1px solid {HESPIA_BORDER};")
         cert_info.setWordWrap(True)
         lg.addWidget(cert_info)
 
@@ -1012,7 +1012,7 @@ class ProxyTab(QWidget):
         l = QVBoxLayout(w)
         lbl = QLabel("WebSocket traffic will appear here.\nEnable WebSocket interception in Options.")
         lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        lbl.setStyleSheet(f"color:{BURP_TEXT_DIM}; font-size:13px;")
+        lbl.setStyleSheet(f"color:{HESPIA_TEXT_DIM}; font-size:13px;")
         l.addStretch()
         l.addWidget(lbl)
         l.addStretch()
