@@ -52,8 +52,9 @@ class HttpHistoryTable(QWidget):
     send_to_intruder = Signal(object)
     send_to_decoder = Signal(str)
 
-    def __init__(self, parent=None):
+    def __init__(self, engine, parent=None):
         super().__init__(parent)
+        self.engine = engine
         self._flows: Dict[str, object] = {}   # flow_id -> FlowEntry
         self._row_map: Dict[str, int] = {}     # flow_id -> row index
         self._setup_ui()
@@ -97,6 +98,10 @@ class HttpHistoryTable(QWidget):
         self._https_only = QCheckBox("HTTPS only")
         self._https_only.stateChanged.connect(self._apply_filter)
         tl.addWidget(self._https_only)
+
+        self._scope_only = QCheckBox("In scope only")
+        self._scope_only.stateChanged.connect(self._apply_filter)
+        tl.addWidget(self._scope_only)
 
         clear_btn = QPushButton("Clear")
         clear_btn.setFixedHeight(24)
@@ -344,8 +349,19 @@ class HttpHistoryTable(QWidget):
         method = self._method_filter.currentText()
         status = self._status_filter.currentText()
         https_only = self._https_only.isChecked()
+        scope_only = self._scope_only.isChecked()
 
         for row in range(self._table.rowCount()):
+            flow_id = self._table.item(row, COL_NUM).data(Qt.ItemDataRole.UserRole)
+            entry = self._flows.get(flow_id)
+            
+            visible = True
+            
+            # Scope filter
+            if scope_only and entry:
+                if not self.engine.is_in_scope(entry.url):
+                    visible = False
+            
             url_item = self._table.item(row, COL_URL)
             host_item = self._table.item(row, COL_HOST)
             method_item = self._table.item(row, COL_METHOD)
@@ -969,8 +985,9 @@ class ProxyTab(QWidget):
     send_to_intruder = Signal(object)
     send_to_decoder = Signal(str)
 
-    def __init__(self, parent=None):
+    def __init__(self, engine, parent=None):
         super().__init__(parent)
+        self.engine = engine
         self._setup_ui()
 
     def _setup_ui(self):
@@ -990,7 +1007,7 @@ class ProxyTab(QWidget):
         self._tabs.addTab(self._intercept_panel, "Intercept")
 
         # ── HTTP History tab
-        self._history = HttpHistoryTable()
+        self._history = HttpHistoryTable(self.engine)
         self._history.send_to_repeater.connect(self.send_to_repeater)
         self._history.send_to_intruder.connect(self.send_to_intruder)
         self._history.send_to_decoder.connect(self.send_to_decoder.emit)

@@ -21,6 +21,7 @@ from ui.styles import (
 
 class SiteMapTree(QWidget):
     """Hierarchical view of all discovered hosts and paths."""
+    send_to_tool = Signal(str, object)  # tool_name, FlowEntry
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -175,18 +176,66 @@ class SiteMapTree(QWidget):
         if not item:
             return
         menu = QMenu(self)
-        menu.addAction("Add to scope")
-        menu.addAction("Remove from scope")
+        add_scope_act = menu.addAction("Add to scope")
+        rem_scope_act = menu.addAction("Remove from scope")
         menu.addSeparator()
-        menu.addAction("Send to Repeater")
-        menu.addAction("Send to Intruder")
-        menu.exec(self._tree.viewport().mapToGlobal(pos))
+        send_rep_act = menu.addAction("Send to Repeater")
+        send_int_act = menu.addAction("Send to Intruder")
+        
+        action = menu.exec(self._tree.viewport().mapToGlobal(pos))
+        if not action:
+            return
 
-    def _apply_filter(self, text: str):
-        text = text.lower()
+        entry = item.data(0, Qt.ItemDataRole.UserRole + 2)
+        host = item.text(0) if item.data(0, Qt.ItemDataRole.UserRole) == "host" else item.parent().text(0)
+
+        if action == add_scope_act:
+            self._add_to_scope(host)
+        elif action == rem_scope_act:
+            self._remove_from_scope(host)
+        elif action == send_rep_act and entry:
+            self.send_to_tool.emit("repeater", entry)
+        elif action == send_int_act and entry:
+            self.send_to_tool.emit("intruder", entry)
+
+    def _add_to_scope(self, host: str):
+        # Find the main widget to get scope editor
+        parent = self.parent()
+        while parent and not hasattr(parent, "_scope_editor"):
+            parent = parent.parent()
+        if parent:
+            parent._scope_editor.add_host_rule(host, include=True)
+
+    def _remove_from_scope(self, host: str):
+        parent = self.parent()
+        while parent and not hasattr(parent, "_scope_editor"):
+            parent = parent.parent()
+        if parent:
+            parent._scope_editor.remove_host_rule(host)
+
+    def _apply_filter(self, text: str = ""):
+        text = self._filter_edit.text().lower()
+        scope_only = self._scope_only_check.isChecked()
+        
+        # Get in-scope hosts
+        in_scope_hosts = []
+        parent = self.parent()
+        while parent and not hasattr(parent, "_scope_editor"):
+            parent = parent.parent()
+        if parent:
+            in_scope_hosts = parent._scope_editor.get_in_scope_hosts()
+
         for i in range(self._tree.topLevelItemCount()):
             host_item = self._tree.topLevelItem(i)
-            host_visible = not text or text in host_item.text(0).lower()
+            host = host_item.text(0).lower()
+            
+            # Visibility logic
+            host_in_scope = any(h in host for h in in_scope_hosts)
+            if scope_only and not host_in_scope:
+                host_item.setHidden(True)
+                continue
+
+            host_visible = not text or text in host.lower()
             child_visible_any = False
             for j in range(host_item.childCount()):
                 child = host_item.child(j)
@@ -337,8 +386,52 @@ class ScopeEditor(QWidget):
         except Exception as e:
             pass
 
+    def add_host_rule(self, host: str, include: bool = True):
+        table = self._include_table if include else self._exclude_table
+        # Check if already exists
+        for row in range(table.rowCount()):
+            item = table.item(row, 2)
+            if item and item.text() == host:
+                return
+        
+        row = table.rowCount()
+        table.insertRow(row)
+        chk = QTableWidgetItem("✓")
+        chk.setCheckState(Qt.CheckState.Checked)
+        table.setItem(row, 0, chk)
+        
+        proto_combo = QComboBox()
+        proto_combo.addItems(["Any", "http", "https"])
+        table.setCellWidget(row, 1, proto_combo)
+        
+        table.setItem(row, 2, QTableWidgetItem(host))
+        table.setItem(row, 3, QTableWidgetItem(".*"))
+        table.setItem(row, 4, QTableWidgetItem(".*"))
+        
+        self.scope_changed.emit(self.get_scope_rules())
+
+    def remove_host_rule(self, host: str):
+        for table in [self._include_table, self._exclude_table]:
+            for row in range(table.rowCount()):
+                item = table.item(row, 2)
+                if item and item.text() == host:
+                    table.removeRow(row)
+                    self.scope_changed.emit(self.get_scope_rules())
+                    return
+
+    def get_in_scope_hosts(self) -> list:
+        hosts = []
+        for row in range(self._include_table.rowCount()):
+            chk = self._include_table.item(row, 0)
+            if chk and chk.checkState() == Qt.CheckState.Checked:
+                host_item = self._include_table.item(row, 2)
+                if host_item:
+                    hosts.append(host_item.text().lower())
+        return hosts
+
     def get_scope_rules(self) -> list:
         rules = []
+        # Include
         for row in range(self._include_table.rowCount()):
             chk = self._include_table.item(row, 0)
             proto_w = self._include_table.cellWidget(row, 1)
@@ -354,6 +447,22 @@ class ScopeEditor(QWidget):
                     "path": path_item.text() if path_item else ".*",
                     "include": True,
                 })
+        # Exclude
+        for row in range(self._exclude_table.rowCount()):
+            chk = self._exclude_table.item(row, 0)
+            proto_w = self._exclude_table.cellWidget(row, 1)
+            host_item = self._exclude_table.item(row, 2)
+            port_item = self._exclude_table.item(row, 3)
+            path_item = self._exclude_table.item(row, 4)
+            if host_item:
+                rules.append({
+                    "enabled": chk and chk.checkState() == Qt.CheckState.Checked,
+                    "protocol": proto_w.currentText() if proto_w else "Any",
+                    "host": host_item.text(),
+                    "port": port_item.text() if port_item else ".*",
+                    "path": path_item.text() if path_item else ".*",
+                    "include": False,
+                })
         return rules
 
 
@@ -364,6 +473,7 @@ class TargetTab(QWidget):
     Target tab - Site Map and Scope configuration.
     """
     scope_updated = Signal(list)
+    send_to_tool = Signal(str, object)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -390,6 +500,7 @@ class TargetTab(QWidget):
 
         # Site Map
         self._site_map = SiteMapTree()
+        self._site_map.send_to_tool.connect(self.send_to_tool.emit)
         inner_tabs.addTab(self._site_map, "Site map")
 
         # Scope

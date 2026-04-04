@@ -432,9 +432,10 @@ class MainWindow(QMainWindow):
 
         self._target_tab = TargetTab()
         self._target_tab.scope_updated.connect(self._on_scope_updated)
+        self._target_tab.send_to_tool.connect(self._on_send_to_tool)
         self._main_tabs.addTab(self._target_tab, "Target")
 
-        self._proxy_tab = ProxyTab()
+        self._proxy_tab = ProxyTab(self._engine)
         self._proxy_tab.forward_request.connect(self._engine.forward_request)
         self._proxy_tab.forward_response.connect(self._engine.forward_response)
         self._proxy_tab.drop_flow.connect(self._engine.drop_flow)
@@ -687,6 +688,16 @@ class MainWindow(QMainWindow):
         self._intruder_tab.load_from_flow(entry)
         self._main_tabs.setCurrentWidget(self._intruder_tab)
         self._logger.append("info", f"Sent to Intruder: {entry.method} {entry.url}")
+
+    def _on_send_to_tool(self, tool: str, entry):
+        if tool == "repeater":
+            self._send_to_repeater(entry)
+        elif tool == "intruder":
+            self._send_to_intruder(entry)
+        elif tool == "decoder":
+            # entry can be a FlowEntry or a string
+            text = entry if isinstance(entry, str) else entry.url
+            self._on_send_to_decoder(text)
 
     # ── Menu actions ──────────────────────────────────────────────────────
 
