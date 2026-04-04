@@ -16,8 +16,8 @@ from PySide6.QtGui import (
     QTextDocument, QPainter, QAction, QKeySequence
 )
 from ui.styles import (
-    BURP_ORANGE, BURP_BG, BURP_BG_DARK, BURP_BG_LIGHT, BURP_TEXT, BURP_BORDER,
-    BURP_SELECTION, METHOD_COLORS, HTTP_STATUS_COLORS
+    HESPIA_ORANGE, HESPIA_BG, HESPIA_BG_DARK, HESPIA_BG_LIGHT, HESPIA_TEXT, HESPIA_BORDER,
+    HESPIA_SELECTION, METHOD_COLORS, HTTP_STATUS_COLORS
 )
 
 
@@ -207,7 +207,7 @@ class CodeEditor(QPlainTextEdit):
 
     def _paint_line_numbers(self, event):
         painter = QPainter(self.line_area)
-        painter.fillRect(event.rect(), QColor(BURP_BG_DARK))
+        painter.fillRect(event.rect(), QColor(HESPIA_BG_DARK))
 
         block = self.firstVisibleBlock()
         block_num = block.blockNumber()
@@ -257,13 +257,13 @@ class RequestEditor(QWidget):
         # ── Header bar
         header = QFrame()
         header.setFixedHeight(32)
-        header.setStyleSheet(f"background:{BURP_BG_DARK}; border-bottom:1px solid {BURP_BORDER};")
+        header.setStyleSheet(f"background:{HESPIA_BG_DARK}; border-bottom:1px solid {HESPIA_BORDER};")
         hl = QHBoxLayout(header)
         hl.setContentsMargins(8, 0, 8, 0)
         hl.setSpacing(4)
 
         lbl = QLabel(self.title.upper())
-        lbl.setStyleSheet(f"color:{BURP_ORANGE}; font-weight:bold; font-size:11px; letter-spacing:1px;")
+        lbl.setStyleSheet(f"color:{HESPIA_ORANGE}; font-weight:bold; font-size:11px; letter-spacing:1px;")
         hl.addWidget(lbl)
         hl.addStretch()
 
@@ -273,9 +273,9 @@ class RequestEditor(QWidget):
         self._view_combo.setFixedWidth(90)
         self._view_combo.setStyleSheet(f"""
             QComboBox {{
-                background:{BURP_BG_LIGHT};
-                color:{BURP_TEXT};
-                border:1px solid {BURP_BORDER};
+                background:{HESPIA_BG_LIGHT};
+                color:{HESPIA_TEXT};
+                border:1px solid {HESPIA_BORDER};
                 border-radius:2px;
                 padding:2px 4px;
                 font-size:11px;
@@ -329,7 +329,7 @@ class RequestEditor(QWidget):
         # ── Status bar
         status_bar = QFrame()
         status_bar.setFixedHeight(22)
-        status_bar.setStyleSheet(f"background:{BURP_BG_DARK}; border-top:1px solid {BURP_BORDER};")
+        status_bar.setStyleSheet(f"background:{HESPIA_BG_DARK}; border-top:1px solid {HESPIA_BORDER};")
         sl = QHBoxLayout(status_bar)
         sl.setContentsMargins(8, 0, 8, 0)
         self._status_lbl = QLabel("")

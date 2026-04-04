@@ -15,8 +15,8 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont, QColor
 from ui.styles import (
-    BURP_ORANGE, BURP_BG, BURP_BG_DARK, BURP_BG_LIGHT, BURP_TEXT,
-    BURP_BORDER, BURP_TEXT_DIM
+    HESPIA_ORANGE, HESPIA_BG, HESPIA_BG_DARK, HESPIA_BG_LIGHT, HESPIA_TEXT,
+    HESPIA_BORDER, HESPIA_TEXT_DIM
 )
 
 
@@ -72,7 +72,7 @@ class DecoderRow(QFrame):
 
     def _setup_ui(self, initial_text: str):
         self.setStyleSheet(
-            f"QFrame {{ background:{BURP_BG_LIGHT}; border:1px solid {BURP_BORDER};"
+            f"QFrame {{ background:{HESPIA_BG_LIGHT}; border:1px solid {HESPIA_BORDER};"
             f" border-radius:4px; margin:2px 0; }}"
         )
         layout = QVBoxLayout(self)
@@ -122,15 +122,15 @@ class DecoderRow(QFrame):
         font.setPointSize(11)
         self._editor.setFont(font)
         self._editor.setStyleSheet(
-            f"QPlainTextEdit {{ background:{BURP_BG}; color:{BURP_TEXT};"
-            f" border:1px solid {BURP_BORDER}; padding:4px; }}"
+            f"QPlainTextEdit {{ background:{HESPIA_BG}; color:{HESPIA_TEXT};"
+            f" border:1px solid {HESPIA_BORDER}; padding:4px; }}"
         )
         self._editor.textChanged.connect(self._on_text_changed)
         layout.addWidget(self._editor)
 
         # ── Status
         self._status = QLabel("")
-        self._status.setStyleSheet(f"color:{BURP_TEXT_DIM}; font-size:10px;")
+        self._status.setStyleSheet(f"color:{HESPIA_TEXT_DIM}; font-size:10px;")
         layout.addWidget(self._status)
 
     def _apply(self):
@@ -158,7 +158,7 @@ class DecoderRow(QFrame):
         if result:
             self._editor.setPlainText(result)
             self._status.setText(f"✓ Auto-detected: {method}")
-            self._status.setStyleSheet(f"color:{BURP_ORANGE}; font-size:10px;")
+            self._status.setStyleSheet(f"color:{HESPIA_ORANGE}; font-size:10px;")
         else:
             self._status.setText("? Could not auto-detect encoding")
             self._status.setStyleSheet(f"color:#FF9800; font-size:10px;")
@@ -238,13 +238,13 @@ class DecoderTab(QWidget):
         # ── Header
         header = QFrame()
         header.setFixedHeight(36)
-        header.setStyleSheet(f"background:{BURP_BG_DARK}; border-bottom:1px solid {BURP_BORDER};")
+        header.setStyleSheet(f"background:{HESPIA_BG_DARK}; border-bottom:1px solid {HESPIA_BORDER};")
         hl = QHBoxLayout(header)
         hl.setContentsMargins(10, 4, 10, 4)
         hl.setSpacing(8)
 
         title = QLabel("Decoder / Encoder")
-        title.setStyleSheet(f"color:{BURP_ORANGE}; font-weight:bold; font-size:13px;")
+        title.setStyleSheet(f"color:{HESPIA_ORANGE}; font-weight:bold; font-size:13px;")
         hl.addWidget(title)
         hl.addStretch()
 
@@ -263,7 +263,7 @@ class DecoderTab(QWidget):
         # ── Quick encode toolbar
         quick_bar = QFrame()
         quick_bar.setFixedHeight(34)
-        quick_bar.setStyleSheet(f"background:{BURP_BG_DARK}; border-bottom:1px solid {BURP_BORDER};")
+        quick_bar.setStyleSheet(f"background:{HESPIA_BG_DARK}; border-bottom:1px solid {HESPIA_BORDER};")
         ql = QHBoxLayout(quick_bar)
         ql.setContentsMargins(8, 4, 8, 4)
         ql.setSpacing(4)

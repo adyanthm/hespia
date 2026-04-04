@@ -12,7 +12,7 @@ from PySide6.QtGui import (
     QFont, QColor, QTextCursor, QTextCharFormat,
     QSyntaxHighlighter, QTextDocument
 )
-from ui.styles import BURP_ORANGE, BURP_BG, BURP_BG_DARK, BURP_BG_LIGHT, BURP_TEXT, BURP_BORDER, BURP_TEXT_DIM
+from ui.styles import HESPIA_ORANGE, HESPIA_BG, HESPIA_BG_DARK, HESPIA_BG_LIGHT, HESPIA_TEXT, HESPIA_BORDER, HESPIA_TEXT_DIM
 
 
 class DiffHighlighter(QSyntaxHighlighter):
@@ -59,15 +59,15 @@ class ComparerPane(QWidget):
 
         hdr = QFrame()
         hdr.setFixedHeight(28)
-        hdr.setStyleSheet(f"background:{BURP_BG_DARK}; border-bottom:1px solid {BURP_BORDER};")
+        hdr.setStyleSheet(f"background:{HESPIA_BG_DARK}; border-bottom:1px solid {HESPIA_BORDER};")
         hl = QHBoxLayout(hdr)
         hl.setContentsMargins(8, 4, 8, 4)
         lbl = QLabel(title)
-        lbl.setStyleSheet(f"color:{BURP_ORANGE}; font-weight:bold; font-size:11px;")
+        lbl.setStyleSheet(f"color:{HESPIA_ORANGE}; font-weight:bold; font-size:11px;")
         hl.addWidget(lbl)
         hl.addStretch()
         self._stat = QLabel("")
-        self._stat.setStyleSheet(f"color:{BURP_TEXT_DIM}; font-size:10px;")
+        self._stat.setStyleSheet(f"color:{HESPIA_TEXT_DIM}; font-size:10px;")
         hl.addWidget(self._stat)
         layout.addWidget(hdr)
 
@@ -78,7 +78,7 @@ class ComparerPane(QWidget):
         font.setPointSize(11)
         self._editor.setFont(font)
         self._editor.setStyleSheet(
-            f"QPlainTextEdit {{ background:{BURP_BG_LIGHT}; color:{BURP_TEXT}; border:none; padding:4px; }}"
+            f"QPlainTextEdit {{ background:{HESPIA_BG_LIGHT}; color:{HESPIA_TEXT}; border:none; padding:4px; }}"
         )
         self._editor.textChanged.connect(self._update_stat)
         layout.addWidget(self._editor, 1)
@@ -116,18 +116,18 @@ class ComparerTab(QWidget):
         # ── Header bar
         header = QFrame()
         header.setFixedHeight(36)
-        header.setStyleSheet(f"background:{BURP_BG_DARK}; border-bottom:1px solid {BURP_BORDER};")
+        header.setStyleSheet(f"background:{HESPIA_BG_DARK}; border-bottom:1px solid {HESPIA_BORDER};")
         hl = QHBoxLayout(header)
         hl.setContentsMargins(10, 4, 10, 4)
         hl.setSpacing(8)
 
         title = QLabel("Comparer")
-        title.setStyleSheet(f"color:{BURP_ORANGE}; font-weight:bold; font-size:13px;")
+        title.setStyleSheet(f"color:{HESPIA_ORANGE}; font-weight:bold; font-size:13px;")
         hl.addWidget(title)
 
         sep = QFrame()
         sep.setFrameShape(QFrame.Shape.VLine)
-        sep.setStyleSheet(f"color:{BURP_BORDER};")
+        sep.setStyleSheet(f"color:{HESPIA_BORDER};")
         hl.addWidget(sep)
 
         hl.addWidget(QLabel("Compare by:"))
@@ -156,7 +156,7 @@ class ComparerTab(QWidget):
 
         # Stats
         self._stats_label = QLabel("")
-        self._stats_label.setStyleSheet(f"color:{BURP_TEXT_DIM}; font-size:11px;")
+        self._stats_label.setStyleSheet(f"color:{HESPIA_TEXT_DIM}; font-size:11px;")
         hl.addWidget(self._stats_label)
 
         layout.addWidget(header)
@@ -184,7 +184,7 @@ class ComparerTab(QWidget):
         font.setPointSize(11)
         self._unified_diff.setFont(font)
         self._unified_diff.setStyleSheet(
-            f"QPlainTextEdit {{ background:{BURP_BG_LIGHT}; color:{BURP_TEXT}; border:none; padding:4px; }}"
+            f"QPlainTextEdit {{ background:{HESPIA_BG_LIGHT}; color:{HESPIA_TEXT}; border:none; padding:4px; }}"
         )
         self._diff_highlighter = DiffHighlighter(self._unified_diff.document())
         diff_tabs.addTab(self._unified_diff, "Unified Diff")
@@ -219,7 +219,7 @@ class ComparerTab(QWidget):
         for ed in (self._sbs_left, self._sbs_right):
             ed.setFont(font)
             ed.setStyleSheet(
-                f"QPlainTextEdit {{ background:{BURP_BG_LIGHT}; color:{BURP_TEXT}; border:none; padding:4px; }}"
+                f"QPlainTextEdit {{ background:{HESPIA_BG_LIGHT}; color:{HESPIA_TEXT}; border:none; padding:4px; }}"
             )
 
         # Sync scrolling
@@ -234,7 +234,7 @@ class ComparerTab(QWidget):
 
         div = QFrame()
         div.setFrameShape(QFrame.Shape.VLine)
-        div.setStyleSheet(f"color:{BURP_BORDER};")
+        div.setStyleSheet(f"color:{HESPIA_BORDER};")
         l.addWidget(div)
 
         l.addWidget(self._sbs_right, 1)
@@ -246,7 +246,7 @@ class ComparerTab(QWidget):
         l.setContentsMargins(16, 16, 16, 16)
         l.setSpacing(8)
         self._summary_label = QLabel("Click 'Compare' to see summary.")
-        self._summary_label.setStyleSheet(f"color:{BURP_TEXT}; font-size:12px;")
+        self._summary_label.setStyleSheet(f"color:{HESPIA_TEXT}; font-size:12px;")
         self._summary_label.setWordWrap(True)
         l.addWidget(self._summary_label)
         l.addStretch()
@@ -290,7 +290,7 @@ class ComparerTab(QWidget):
         similarity = difflib.SequenceMatcher(None, text1, text2).ratio() * 100
         self._summary_label.setText(
             f"<b>Comparison Summary</b><br><br>"
-            f"• Similarity: <span style='color:{BURP_ORANGE}'>{similarity:.1f}%</span><br>"
+            f"• Similarity: <span style='color:{HESPIA_ORANGE}'>{similarity:.1f}%</span><br>"
             f"• Item 1: {len(text1)} chars, {len(text1.splitlines())} lines<br>"
             f"• Item 2: {len(text2)} chars, {len(text2.splitlines())} lines<br>"
             f"• Additions: <span style='color:#4CAF50'>+{additions}</span><br>"

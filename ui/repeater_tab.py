@@ -14,8 +14,8 @@ from PySide6.QtCore import Qt, Signal, QThread, QObject, QTimer
 from PySide6.QtGui import QColor, QFont
 from ui.request_editor import RequestEditor
 from ui.styles import (
-    BURP_ORANGE, BURP_BG, BURP_BG_DARK, BURP_TEXT, BURP_BORDER,
-    BURP_TEXT_DIM, BURP_SUCCESS, BURP_ERROR, BURP_HEADER,
+    HESPIA_ORANGE, HESPIA_BG, HESPIA_BG_DARK, HESPIA_TEXT, HESPIA_BORDER,
+    HESPIA_TEXT_DIM, HESPIA_SUCCESS, HESPIA_ERROR, HESPIA_HEADER,
     MODERN_ACTION_STYLE, MODERN_DROP_STYLE
 )
 
@@ -98,7 +98,7 @@ class RepeaterInstance(QWidget):
         # ── Control toolbar
         ctrl = QFrame()
         ctrl.setFixedHeight(38)
-        ctrl.setStyleSheet(f"background:{BURP_BG_DARK}; border:1px solid {BURP_BORDER}; border-radius:3px;")
+        ctrl.setStyleSheet(f"background:{HESPIA_BG_DARK}; border:1px solid {HESPIA_BORDER}; border-radius:3px;")
         cl = QHBoxLayout(ctrl)
         cl.setContentsMargins(8, 4, 8, 4)
         cl.setSpacing(6)
@@ -120,29 +120,29 @@ class RepeaterInstance(QWidget):
 
         sep = QFrame()
         sep.setFrameShape(QFrame.Shape.VLine)
-        sep.setStyleSheet(f"color:{BURP_BORDER};")
+        sep.setStyleSheet(f"color:{HESPIA_BORDER};")
         cl.addWidget(sep)
 
         # History navigation
         btn_style = f"""
             QPushButton {{
-                color: {BURP_TEXT};
+                color: {HESPIA_TEXT};
                 font-weight: bold;
                 font-size: 14px;
-                border: 1px solid {BURP_BORDER};
+                border: 1px solid {HESPIA_BORDER};
                 border-radius: 4px;
-                background-color: {BURP_BG};
+                background-color: {HESPIA_BG};
                 padding: 0px;
             }}
             QPushButton:hover {{
-                background-color: {BURP_HEADER};
-                color: {BURP_ORANGE};
+                background-color: {HESPIA_HEADER};
+                color: {HESPIA_ORANGE};
             }}
             QPushButton:pressed {{
-                background-color: {BURP_BG_DARK};
+                background-color: {HESPIA_BG_DARK};
             }}
             QPushButton:disabled {{
-                color: {BURP_TEXT_DIM};
+                color: {HESPIA_TEXT_DIM};
                 opacity: 0.5;
             }}
         """
@@ -153,7 +153,7 @@ class RepeaterInstance(QWidget):
         cl.addWidget(self._prev_btn)
 
         self._history_label = QLabel("0 / 0")
-        self._history_label.setStyleSheet(f"color:{BURP_TEXT_DIM}; font-size:11px; min-width:50px;")
+        self._history_label.setStyleSheet(f"color:{HESPIA_TEXT_DIM}; font-size:11px; min-width:50px;")
         self._history_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         cl.addWidget(self._history_label)
 
@@ -165,19 +165,19 @@ class RepeaterInstance(QWidget):
 
         sep2 = QFrame()
         sep2.setFrameShape(QFrame.Shape.VLine)
-        sep2.setStyleSheet(f"color:{BURP_BORDER};")
+        sep2.setStyleSheet(f"color:{HESPIA_BORDER};")
         cl.addWidget(sep2)
 
         cl.addStretch()
 
         # Status label
         self._status_label = QLabel("Ready")
-        self._status_label.setStyleSheet(f"color:{BURP_TEXT_DIM}; font-size:11px;")
+        self._status_label.setStyleSheet(f"color:{HESPIA_TEXT_DIM}; font-size:11px;")
         cl.addWidget(self._status_label)
 
         # Response time
         self._time_label = QLabel("")
-        self._time_label.setStyleSheet(f"color:{BURP_ORANGE}; font-size:11px; font-weight:bold;")
+        self._time_label.setStyleSheet(f"color:{HESPIA_ORANGE}; font-size:11px; font-weight:bold;")
         cl.addWidget(self._time_label)
 
         layout.addWidget(ctrl)
@@ -242,7 +242,7 @@ class RepeaterInstance(QWidget):
         self._send_btn.setEnabled(False)
         self._cancel_btn.setEnabled(True)
         self._status_label.setText("Sending...")
-        self._status_label.setStyleSheet(f"color:{BURP_ORANGE}; font-size:11px;")
+        self._status_label.setStyleSheet(f"color:{HESPIA_ORANGE}; font-size:11px;")
         self._resp_editor.clear()
         self._resp_editor.set_content("Waiting for response...", "Sending")
 
@@ -267,7 +267,7 @@ class RepeaterInstance(QWidget):
         self._send_btn.setEnabled(True)
         self._cancel_btn.setEnabled(False)
         self._status_label.setText("Cancelled")
-        self._status_label.setStyleSheet(f"color:{BURP_ERROR}; font-size:11px;")
+        self._status_label.setStyleSheet(f"color:{HESPIA_ERROR}; font-size:11px;")
 
     def _on_response(self, resp_text: str):
         import time
@@ -280,12 +280,12 @@ class RepeaterInstance(QWidget):
         # Parse status for color
         first_line = resp_text.split("\n")[0] if resp_text else ""
         parts = first_line.split(" ", 2)
-        status_color = BURP_SUCCESS
+        status_color = HESPIA_SUCCESS
         if len(parts) >= 2:
             try:
                 code = int(parts[1])
                 if code >= 400:
-                    status_color = BURP_ERROR
+                    status_color = HESPIA_ERROR
                 elif code >= 300:
                     status_color = "#FF9800"
             except ValueError:
@@ -304,7 +304,7 @@ class RepeaterInstance(QWidget):
         self._send_btn.setEnabled(True)
         self._cancel_btn.setEnabled(False)
         self._status_label.setText(f"Error: {err}")
-        self._status_label.setStyleSheet(f"color:{BURP_ERROR}; font-size:11px;")
+        self._status_label.setStyleSheet(f"color:{HESPIA_ERROR}; font-size:11px;")
 
     def _go_prev(self):
         if self._history_index > 0:
@@ -379,12 +379,12 @@ class RepeaterTab(QWidget):
         # ── Header
         header = QFrame()
         header.setFixedHeight(30)
-        header.setStyleSheet(f"background:{BURP_BG_DARK}; border-bottom:1px solid {BURP_BORDER};")
+        header.setStyleSheet(f"background:{HESPIA_BG_DARK}; border-bottom:1px solid {HESPIA_BORDER};")
         hl = QHBoxLayout(header)
         hl.setContentsMargins(8, 2, 8, 2)
 
         title = QLabel("HTTP Repeater")
-        title.setStyleSheet(f"color:{BURP_ORANGE}; font-weight:bold; font-size:13px;")
+        title.setStyleSheet(f"color:{HESPIA_ORANGE}; font-weight:bold; font-size:13px;")
         hl.addWidget(title)
         hl.addStretch()
 

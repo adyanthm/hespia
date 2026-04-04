@@ -12,8 +12,8 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor, QFont, QAction
 from ui.styles import (
-    BURP_ORANGE, BURP_BG, BURP_BG_DARK, BURP_TEXT, BURP_BORDER,
-    BURP_TEXT_DIM, BURP_SUCCESS, BURP_ERROR, HTTP_STATUS_COLORS
+    HESPIA_ORANGE, HESPIA_BG, HESPIA_BG_DARK, HESPIA_TEXT, HESPIA_BORDER,
+    HESPIA_TEXT_DIM, HESPIA_SUCCESS, HESPIA_ERROR, HTTP_STATUS_COLORS
 )
 
 
@@ -35,7 +35,7 @@ class SiteMapTree(QWidget):
         # Toolbar
         tb = QFrame()
         tb.setFixedHeight(32)
-        tb.setStyleSheet(f"background:{BURP_BG_DARK}; border-bottom:1px solid {BURP_BORDER};")
+        tb.setStyleSheet(f"background:{HESPIA_BG_DARK}; border-bottom:1px solid {HESPIA_BORDER};")
         tl = QHBoxLayout(tb)
         tl.setContentsMargins(6, 4, 6, 4)
         tl.setSpacing(6)
@@ -74,11 +74,11 @@ class SiteMapTree(QWidget):
         # Status bar
         sb = QFrame()
         sb.setFixedHeight(22)
-        sb.setStyleSheet(f"background:{BURP_BG_DARK}; border-top:1px solid {BURP_BORDER};")
+        sb.setStyleSheet(f"background:{HESPIA_BG_DARK}; border-top:1px solid {HESPIA_BORDER};")
         sl = QHBoxLayout(sb)
         sl.setContentsMargins(8, 0, 8, 0)
         self._count_label = QLabel("0 hosts, 0 requests")
-        self._count_label.setStyleSheet(f"color:{BURP_TEXT_DIM}; font-size:11px;")
+        self._count_label.setStyleSheet(f"color:{HESPIA_TEXT_DIM}; font-size:11px;")
         sl.addWidget(self._count_label)
         sl.addStretch()
         layout.addWidget(sb)
@@ -131,13 +131,13 @@ class SiteMapTree(QWidget):
         if entry.status_code:
             code = str(entry.status_code)
             item.setText(1, code)
-            color = HTTP_STATUS_COLORS.get(code[0], BURP_TEXT)
+            color = HTTP_STATUS_COLORS.get(code[0], HESPIA_TEXT)
             item.setForeground(1, QColor(color))
         item.setText(2, f"{entry.response_length} B")
         item.setText(3, entry.content_type[:20] if entry.content_type else "")
         # Method badge color
         from ui.styles import METHOD_COLORS
-        method_color = METHOD_COLORS.get(entry.method, BURP_TEXT)
+        method_color = METHOD_COLORS.get(entry.method, HESPIA_TEXT)
         item.setForeground(0, QColor(method_color))
 
     def _on_select(self, current, _):
@@ -377,11 +377,11 @@ class TargetTab(QWidget):
         # Header
         header = QFrame()
         header.setFixedHeight(30)
-        header.setStyleSheet(f"background:{BURP_BG_DARK}; border-bottom:1px solid {BURP_BORDER};")
+        header.setStyleSheet(f"background:{HESPIA_BG_DARK}; border-bottom:1px solid {HESPIA_BORDER};")
         hl = QHBoxLayout(header)
         hl.setContentsMargins(8, 2, 8, 2)
         title = QLabel("Target")
-        title.setStyleSheet(f"color:{BURP_ORANGE}; font-weight:bold; font-size:13px;")
+        title.setStyleSheet(f"color:{HESPIA_ORANGE}; font-weight:bold; font-size:13px;")
         hl.addWidget(title)
         hl.addStretch()
         layout.addWidget(header)
