@@ -345,7 +345,7 @@ class MainWindow(QMainWindow):
         self._current_port = 8080
 
         self.setWindowTitle("Hespia — Advanced Web Proxy Tool")
-        self.setMinimumSize(1280, 800)
+        self.setMinimumSize(1024, 700) # Smaller min-height for laptop screens
         self.resize(1440, 900)
 
         self._setup_style()
