@@ -60,9 +60,9 @@ def main():
     )
     args = parser.parse_args()
 
-    from PySide6.QtWidgets import QApplication
-    from PySide6.QtCore import Qt
-    from PySide6.QtGui import QFont
+    from PySide6.QtWidgets import QApplication, QSplashScreen
+    from PySide6.QtGui import QPixmap, QColor, QFont
+    from PySide6.QtCore import Qt, QTimer
 
     # High-DPI support
     QApplication.setHighDpiScaleFactorRoundingPolicy(
@@ -70,6 +70,21 @@ def main():
     )
 
     app = QApplication(sys.argv)
+    
+    # ── Splash Screen ──
+    banner_pix = QPixmap("media/banner.png")
+    
+    # Scale relative to screen size (IDE-like: roughly 35% of screen width)
+    screen = app.primaryScreen()
+    screen_width = screen.availableGeometry().width()
+    splash_width = int(screen_width * 0.47)
+    
+    scaled_pix = banner_pix.scaled(splash_width, splash_width, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+    
+    splash = QSplashScreen(scaled_pix, Qt.WindowType.WindowStaysOnTopHint)
+    splash.show()
+    app.processEvents()
+    
     app.setApplicationName("Hespia")
     app.setApplicationVersion("1.0.0")
     app.setOrganizationName("Hespia")
@@ -86,7 +101,9 @@ def main():
     if args.auto_start:
         window._start_proxy(args.host, args.port)
 
-    window.show()
+    # Fade out splash and show main window
+    window.showMaximized()
+    splash.finish(window)
 
     sys.exit(app.exec())
 
