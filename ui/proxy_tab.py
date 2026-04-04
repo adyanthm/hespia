@@ -50,6 +50,7 @@ class HttpHistoryTable(QWidget):
     flow_selected = Signal(object)   # FlowEntry
     send_to_repeater = Signal(object)
     send_to_intruder = Signal(object)
+    send_to_decoder = Signal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -144,6 +145,7 @@ class HttpHistoryTable(QWidget):
 
         # Detail (request/response)
         self._detail = RequestResponseSplitter()
+        self._detail.send_to_decoder.connect(self.send_to_decoder.emit)
         splitter.addWidget(self._detail)
         splitter.setSizes([400, 300])
         splitter.setStretchFactor(0, 1)
@@ -384,11 +386,12 @@ class HttpHistoryTable(QWidget):
 
 class InterceptPanel(QWidget):
     """
-    Shows intercepted request in an editor with Forward / Drop / Action buttons.
+    Control panel for manual request/response interception.
     """
-    forward_clicked = Signal(str, str, bool)    # flow_id, modified_raw, is_response
-    drop_clicked = Signal(str)            # flow_id
-    intercept_toggled = Signal(bool)      # enabled
+    forward_clicked = Signal(str, str, bool)  # flow_id, raw, is_response
+    drop_clicked = Signal(str)               # flow_id
+    intercept_toggled = Signal(bool)          # enabled
+    send_to_decoder = Signal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -492,6 +495,8 @@ class InterceptPanel(QWidget):
         
         self._splitter.setSizes([300, 500])
         layout.addWidget(self._splitter, 1)
+
+        self._editor.send_to_decoder.connect(self.send_to_decoder.emit)
 
         # ── Info bar
         info = QFrame()
@@ -962,6 +967,7 @@ class ProxyTab(QWidget):
     # Signals to other tabs
     send_to_repeater = Signal(object)
     send_to_intruder = Signal(object)
+    send_to_decoder = Signal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -979,6 +985,7 @@ class ProxyTab(QWidget):
         self._intercept_panel.forward_clicked.connect(self._on_forward)
         self._intercept_panel.drop_clicked.connect(self._on_drop)
         self._intercept_panel.intercept_toggled.connect(self._on_intercept_toggled)
+        self._intercept_panel.send_to_decoder.connect(self.send_to_decoder.emit)
         self._intercept_panel._mode_combo.currentIndexChanged.connect(self._sync_mode) # Sync when combo changes
         self._tabs.addTab(self._intercept_panel, "Intercept")
 
@@ -986,6 +993,7 @@ class ProxyTab(QWidget):
         self._history = HttpHistoryTable()
         self._history.send_to_repeater.connect(self.send_to_repeater)
         self._history.send_to_intruder.connect(self.send_to_intruder)
+        self._history.send_to_decoder.connect(self.send_to_decoder.emit)
         self._tabs.addTab(self._history, "HTTP History")
 
         # ── WebSocket History tab

@@ -40,6 +40,7 @@ class PayloadHighlighter(QSyntaxHighlighter):
 
 class PositionsEditor(QWidget):
     """Editor for marking payload positions in a request using § markers."""
+    send_to_decoder = Signal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -100,6 +101,8 @@ class PositionsEditor(QWidget):
         self._highlighter = PayloadHighlighter(self._editor.document())
         self._editor.textChanged.connect(self._count_positions)
         layout.addWidget(self._editor, 1)
+
+        self._editor.send_to_decoder.connect(self.send_to_decoder.emit)
 
     def _add_marker(self):
         cursor = self._editor.textCursor()
@@ -658,6 +661,8 @@ class IntruderWorker(QObject):
 # ─── Main Intruder Tab ────────────────────────────────────────────────────────
 
 class IntruderTab(QWidget):
+    send_to_decoder = Signal(str)
+
     def __init__(self, engine, parent=None):
         super().__init__(parent)
         self.engine = engine
@@ -691,6 +696,7 @@ class IntruderTab(QWidget):
 
         # ── Positions tab
         self._positions_editor = PositionsEditor()
+        self._positions_editor.send_to_decoder.connect(self.send_to_decoder.emit)
         self._tabs.addTab(self._positions_editor, "Positions")
 
         # ── Payloads tab

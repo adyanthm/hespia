@@ -48,6 +48,7 @@ class SendWorker(QObject):
 
 class RepeaterInstance(QWidget):
     """A single repeater request/response tab."""
+    send_to_decoder = Signal(str)
 
     def __init__(self, engine, name: str = "Request", parent=None):
         super().__init__(parent)
@@ -199,6 +200,9 @@ class RepeaterInstance(QWidget):
         self._resp_editor = RequestEditor("Response", mode="response", read_only=True)
         splitter.addWidget(self._resp_editor)
         splitter.setSizes([500, 500])
+
+        self._req_editor.send_to_decoder.connect(self.send_to_decoder.emit)
+        self._resp_editor.send_to_decoder.connect(self.send_to_decoder.emit)
 
         layout.addWidget(splitter, 1)
 
@@ -359,6 +363,8 @@ class RepeaterTab(QWidget):
     """
     Repeater tab - manages multiple repeater instances via sub-tabs.
     """
+    send_to_decoder = Signal(str)
+
     def __init__(self, engine, parent=None):
         super().__init__(parent)
         self.engine = engine
@@ -403,6 +409,7 @@ class RepeaterTab(QWidget):
         if not name:
             name = f"#{self._instance_count}"
         inst = RepeaterInstance(self.engine, name)
+        inst.send_to_decoder.connect(self.send_to_decoder.emit)
         idx = self._tabs.addTab(inst, name)
         self._tabs.setCurrentIndex(idx)
         return inst

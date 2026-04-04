@@ -172,6 +172,19 @@ class CodeEditor(QPlainTextEdit):
         self.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
         self.setTabStopDistance(28)
 
+    send_to_decoder = Signal(str)
+
+    def contextMenuEvent(self, event):
+        menu = self.createStandardContextMenu()
+        
+        selected_text = self.textCursor().selectedText()
+        if selected_text:
+            menu.addSeparator()
+            decoder_action = menu.addAction("Send to Decoder")
+            decoder_action.triggered.connect(lambda: self.send_to_decoder.emit(selected_text))
+            
+        menu.exec(event.globalPos())
+
     def _line_number_area_width(self) -> int:
         digits = max(1, len(str(self.blockCount())))
         return 8 + self.fontMetrics().horizontalAdvance("9") * digits
@@ -223,6 +236,7 @@ class RequestEditor(QWidget):
     Full request or response editor with Raw / Pretty / Hex / Base64 views.
     """
     content_changed = Signal(str)  # emits raw text when edited
+    send_to_decoder = Signal(str)
 
     def __init__(self, title: str = "Request", mode: str = "request",
                  read_only: bool = False, parent=None):
@@ -233,6 +247,7 @@ class RequestEditor(QWidget):
         self._raw_text = ""
 
         self._setup_ui()
+        self._raw_editor.send_to_decoder.connect(self.send_to_decoder.emit)
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
@@ -459,6 +474,8 @@ class RequestResponseSplitter(QWidget):
     A horizontally/vertically split widget showing request on left
     and response on right (or top/bottom).
     """
+    send_to_decoder = Signal(str)
+
     def __init__(self, orientation=Qt.Orientation.Horizontal, parent=None):
         super().__init__(parent)
         layout = QVBoxLayout(self)
@@ -471,6 +488,9 @@ class RequestResponseSplitter(QWidget):
         self._splitter.addWidget(self._request_editor)
         self._splitter.addWidget(self._response_editor)
         self._splitter.setSizes([400, 400])
+
+        self._request_editor.send_to_decoder.connect(self.send_to_decoder.emit)
+        self._response_editor.send_to_decoder.connect(self.send_to_decoder.emit)
 
         layout.addWidget(self._splitter)
 

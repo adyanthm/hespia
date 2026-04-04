@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (
     QFrame, QDialog, QDialogButtonBox, QSpinBox, QLineEdit,
     QGroupBox, QCheckBox, QMessageBox, QApplication, QMenuBar,
     QMenu, QToolBar, QSizePolicy, QSplashScreen, QGridLayout,
-    QScrollArea, QPlainTextEdit
+    QScrollArea, QPlainTextEdit, QTextEdit
 )
 from PySide6.QtCore import Qt, QTimer, Signal, QSize
 from PySide6.QtGui import (
@@ -18,7 +18,7 @@ from PySide6.QtGui import (
 from ui.styles import (
     MAIN_STYLESHEET, BURP_ORANGE, BURP_BG, BURP_BG_DARK, BURP_BG_LIGHT,
     BURP_TEXT, BURP_BORDER, BURP_TEXT_DIM, BURP_SUCCESS, BURP_ERROR,
-    BANNER_START_STYLE, BANNER_STOP_STYLE
+    BURP_INFO_BG, BANNER_START_STYLE, BANNER_STOP_STYLE
 )
 from ui.proxy_tab import ProxyTab
 from ui.repeater_tab import RepeaterTab
@@ -441,12 +441,15 @@ class MainWindow(QMainWindow):
         self._proxy_tab.settings_changed.connect(self._on_proxy_settings_changed)
         self._proxy_tab.send_to_repeater.connect(self._send_to_repeater)
         self._proxy_tab.send_to_intruder.connect(self._send_to_intruder)
+        self._proxy_tab.send_to_decoder.connect(self._on_send_to_decoder)
         self._main_tabs.addTab(self._proxy_tab, "Proxy")
 
         self._intruder_tab = IntruderTab(self._engine)
+        self._intruder_tab.send_to_decoder.connect(self._on_send_to_decoder)
         self._main_tabs.addTab(self._intruder_tab, "Intruder")
 
         self._repeater_tab = RepeaterTab(self._engine)
+        self._repeater_tab.send_to_decoder.connect(self._on_send_to_decoder)
         self._main_tabs.addTab(self._repeater_tab, "Repeater")
 
         self._decoder_tab = DecoderTab()
@@ -475,53 +478,113 @@ class MainWindow(QMainWindow):
     def _make_help_tab(self) -> QWidget:
         w = QWidget()
         l = QVBoxLayout(w)
-        l.setContentsMargins(20, 20, 20, 20)
-        l.setSpacing(12)
+        l.setContentsMargins(0, 0, 0, 0)
+        l.setSpacing(0)
 
-        title = QLabel("Hespia Help")
-        title.setStyleSheet(f"color:{BURP_ORANGE}; font-size:20px; font-weight:bold;")
-        l.addWidget(title)
+        # Documentation Sub-Tabs
+        subtabs = QTabWidget()
+        subtabs.setStyleSheet(f"background-color: {BURP_BG}; border: none;")
 
-        help_text = """
-<h3 style='color:#e8672c;'>Quick Start</h3>
-<ol>
-<li>Click <b>Start Proxy</b> to start listening (default: 127.0.0.1:8080)</li>
-<li>Configure your browser proxy settings to use 127.0.0.1:8080</li>
-<li>For HTTPS: navigate to <b>http://mitm.it</b> and install the certificate</li>
-<li>Browse the web — all traffic appears in <b>Proxy → HTTP History</b></li>
-</ol>
+        # --- Tab 1: Getting Started ---
+        gs_tab = self._create_doc_pane(f"""
+            <h1 style='color:{BURP_ORANGE};'>⚡ Getting Started with Hespia</h1>
+            <p>Hespia is a professional-grade web security toolkit. follow these steps to begin testing:</p>
+            <h3>1. Start the Proxy</h3>
+            <p>On the main banner at the top, click <b>▶ Start Proxy</b>. By default, Hespia listens on <b>127.0.0.1:8080</b>.</p>
+            <h3>2. Configure Browser Proxy</h3>
+            <p><b>Recommended: Mozilla Firefox</b>. Firefox supports independent proxy settings and its own certificate store, allowing you to isolate your security testing from the rest of your system traffic.</p>
+            <ul style='line-height:1.8;'>
+                <li>Open Firefox <b>Settings → General</b></li>
+                <li>Scroll to <b>Network Settings → Settings</b></li>
+                <li>Select <b>Manual proxy configuration</b></li>
+                <li>HTTP Proxy: <b>127.0.0.1</b> | Port: <b>8080</b></li>
+                <li>Check the box <b>Also use this proxy for HTTPS</b></li>
+                <li>Click <b>OK</b>. All Firefox traffic is now flowing through Hespia.</li>
+            </ul>
+        """)
+        subtabs.addTab(gs_tab, "Getting Started")
 
-<h3 style='color:#e8672c;'>Intercept</h3>
-<p>Enable Intercept in the Proxy tab to pause and modify requests before they reach the server.
-Use <b>Forward</b> to send, <b>Drop</b> to discard.</p>
+        # --- Tab 2: CA Certificate ---
+        cert_tab = self._create_doc_pane(f"""
+            <h1 style='color:{BURP_ORANGE};'>🔒 Installing CA Certificate</h1>
+            <p>To intercept HTTPS (encrypted) traffic, Hespia must act as a 'Man-in-the-Middle'. Browsers will block this by default until you trust Hespia's Root CA.</p>
+            <h3>Step-by-Step Certificate Installation:</h3>
+            <ol style='line-height:1.8;'>
+                <li>Ensure Hespia is <b>Running</b> and your browser proxy is configured.</li>
+                <li>Navigate to: <b style='color:#2563eb;'>http://mitm.it</b></li>
+                <li>Under the <b>Windows</b> or <b>Other</b> icon, click the <b>Download</b> button.</li>
+                <li><b>Firefox Setup:</b> Open Firefox Settings → Privacy & Security → Certificates → <b>View Certificates</b>. Click <b>Import...</b>, select the downloaded file, check <b>Trust this CA to identify websites</b>, and click OK.</li>
+                <li><b>System/Chrome Setup:</b> Double-click the <b>.cer</b> file → Install Certificate → Local Machine → Place in <b>Trusted Root Certification Authorities</b> store.</li>
+            </ol>
+            <p style='background-color:{BURP_INFO_BG}; padding:10px; border-radius:4px;'><b>Tip:</b> If mitm.it doesn't load, ensure the proxy is active and you are navigating to the exact URL (no https).</p>
+        """)
+        subtabs.addTab(cert_tab, "CA Certificate")
 
-<h3 style='color:#e8672c;'>Repeater</h3>
-<p>Right-click any request in HTTP History → Send to Repeater.
-Modify and re-send requests manually. Full request history navigation included.</p>
+        # --- Tab 3: Proxy & Intercept ---
+        proxy_tab = self._create_doc_pane(f"""
+            <h1 style='color:{BURP_ORANGE};'>🛡️ Proxy & Intercept</h1>
+            <p>This tab captures everything. Use it to observe flow data or pause traffic for modification.</p>
+            <h3>1. HTTP History</h3>
+            <p>Every request/response is recorded here. Right-click any row to view options like <b>Send to Repeater</b> or <b>Send to Intruder</b>.</p>
+            <h3>2. Manual Intercept</h3>
+            <p>Toggle <b>Intercept is ON</b> to pause requests in real-time.</p>
+            <ul style='line-height:1.6;'>
+                <li><b>Editable Editor:</b> Modify headers (User-Agent, Cookies) or POST data before it leaves your machine.</li>
+                <li><b>Forward:</b> Release the request to the destination server.</li>
+                <li><b>Drop:</b> Kill the connection entirely before it reaches the server.</li>
+                <li><b>Forward All:</b> Flush the entire intercepted queue at once (useful for multiple background API calls).</li>
+            </ul>
+        """)
+        subtabs.addTab(proxy_tab, "Proxy / Intercept")
 
-<h3 style='color:#e8672c;'>Intruder</h3>
-<p>Mark payload positions with § markers. Configure payloads and launch automated attacks.
-Supports: Sniper, Battering Ram, Pitchfork, Cluster Bomb attack types.</p>
+        # --- Tab 4: Repeater ---
+        rep_tab = self._create_doc_pane(f"""
+            <h1 style='color:{BURP_ORANGE};'>🔄 HTTP Repeater</h1>
+            <p>Repeater allows you to manually re-send a single request over and over while tweaking parameters.</p>
+            <h3>Features:</h3>
+            <ul>
+                <li><b>Host Sync:</b> Hespia automatically updates the 'Host:' header to match the destination URL, preventing common 404/Invalid Host errors.</li>
+                <li><b>Advanced History:</b> Use the <b>&lt;</b> and <b>&gt;</b> navigation buttons to jump between every version of the request you've sent.</li>
+                <li><b>Raw Access:</b> Full manual control over HTTP methods, versions, and headers.</li>
+            </ul>
+        """)
+        subtabs.addTab(rep_tab, "Repeater")
 
-<h3 style='color:#e8672c;'>Decoder</h3>
-<p>Chain multiple encode/decode operations. Supports: URL, Base64, HTML, Hex, MD5, SHA-1/256/512, Gzip.</p>
+        # --- Tab 5: Intruder ---
+        int_tab = self._create_doc_pane(f"""
+            <h1 style='color:{BURP_ORANGE};'>⚔️ Intruder (Automated Attacks)</h1>
+            <p>Used for brute-forcing, ID enumeration, and automated fuzzing.</p>
+            <h3>How to use:</h3>
+            <ol>
+                <li><b>Markers (§):</b> Highlight text in the request and click <b>Add §</b> to make it a payload position.</li>
+                <li><b>Attack Modes:</b>
+                    <ul>
+                        <li><b>Sniper:</b> One list, one marker at a time. High performance.</li>
+                        <li><b>Pitchfork:</b> Parallel lists for parallel markers (useful for synced creds).</li>
+                        <li><b>Cluster Bomb:</b> Every combination of all payload lists (useful for exhaustive brute force).</li>
+                    </ul>
+                </li>
+                <li><b>Start:</b> Choose your payload list and click <b>Start Attack</b>.</li>
+            </ol>
+        """)
+        subtabs.addTab(int_tab, "Intruder")
 
-<h3 style='color:#e8672c;'>Comparer</h3>
-<p>Paste two text blocks and compare them with unified diff, side-by-side view, and similarity score.</p>
-
-<h3 style='color:#e8672c;'>Match & Replace</h3>
-<p>Configure regex-based auto-replacement rules in <b>Proxy → Options → Match and Replace</b>.</p>
-"""
-        from PySide6.QtWidgets import QTextEdit
-        help_edit = QTextEdit()
-        help_edit.setReadOnly(True)
-        help_edit.setHtml(f"""
-<html><body style='background-color:{BURP_BG_LIGHT}; color:{BURP_TEXT}; font-family:Segoe UI; font-size:13px; padding:16px;'>
-{help_text}
-</body></html>
-""")
-        l.addWidget(help_edit, 1)
+        l.addWidget(subtabs)
         return w
+
+    def _create_doc_pane(self, content: str) -> QTextEdit:
+        doc = QTextEdit()
+        doc.setReadOnly(True)
+        html = f"""
+        <html><body style='background-color:{BURP_BG}; color:{BURP_TEXT}; font-family:Segoe UI; font-size:13px; line-height:1.6; padding:24px;'>
+            {content}
+            <br><br><hr style='border: 0; border-top: 1px solid {BURP_BORDER}'>
+            <p style='color:{BURP_TEXT_DIM}; font-size:11px;'>Hespia Advanced Security Suite v1.0.0 Documentation</p>
+        </body></html>
+        """
+        doc.setHtml(html)
+        doc.setStyleSheet("border: none;")
+        return doc
 
     def _connect_engine(self):
         sig = self._engine.signals
@@ -789,6 +852,19 @@ Supports: Sniper, Battering Ram, Pitchfork, Cluster Bomb attack types.</p>
             f"The certificate is auto-generated on first use."
         )
         QMessageBox.information(self, "CA Certificate", msg)
+
+    def _on_send_to_decoder(self, text: str):
+        """Handle 'Send to Decoder' from any editor."""
+        # Find index of Decoder tab
+        idx = -1
+        for i in range(self._main_tabs.count()):
+            if self._main_tabs.tabText(i) == "Decoder":
+                idx = i
+                break
+        
+        if idx != -1:
+            self._main_tabs.setCurrentIndex(idx)
+            self._decoder_tab.set_content(text)
 
     def _show_about(self):
         QMessageBox.about(
