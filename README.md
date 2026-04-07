@@ -14,12 +14,14 @@ Hespia is a high-performance HTTP/HTTPS proxy and security workbench built for r
 
 #### 🌐 **Dashboard**
 Real-time monitoring and active connection status. No bloat—just the metrics you need to verify your interception is running at zero latency.
+
 ![Dashboard](media/dashboard.gif)
 
 ---
 
 #### 🎯 **Target**
 Map your attack surface. Hespia generates hierarchical site trees from live traffic and provides granular scope-limiting to filter out noisy background requests.
+
 ![Target Module](media/sitemap.gif)
 
 ---
@@ -32,18 +34,21 @@ The primary workbench for real-time traffic manipulation. Freeze requests and re
 
 #### ⚔️ **Intruder**
 Automation without the complexity. Hespia's transformation engine supports **Sniper**, **Battering Ram**, **Pitchfork**, and **Cluster Bomb** attack modes for exhaustive credential and parameter fuzzing.
+
 ![Intruder Attack](media/intruder.gif)
 
 ---
 
 #### 🔄 **Repeater**
 The standard for manual vulnerability testing. Replay individual requests, modify them on the fly, and track your testing history across isolated tabs. 
+
 ![Repeater Overview](media/repeater.gif)
 
 ---
 
 #### 🧪 **Decoder & Comparer**
 Toolkit for handling data. Decoder provides multi-stage encoding/decoding (Base64, URL, Hex, HTML), while Comparer offers visual diffing between different sets of requests or responses.
+
 ![Toolkit](media/comparer.gif)
 
 
