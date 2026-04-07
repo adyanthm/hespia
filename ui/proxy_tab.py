@@ -3,8 +3,8 @@ Proxy Tab - Intercept, HTTP History, and Options subtabs.
 The heart of the proxy tool.
 """
 import time
+import re
 from typing import Optional, Dict, List
-import time
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QTabWidget,
     QPushButton, QLabel, QTableWidget, QTableWidgetItem,
@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
     QToolBar, QSizePolicy, QTextEdit, QTabBar
 )
 from PySide6.QtCore import Qt, Signal, QTimer, QSortFilterProxyModel, QRegularExpression
-from PySide6.QtGui import QColor, QFont, QAction, QIcon, QKeySequence
+from PySide6.QtGui import QColor, QFont, QAction, QIcon, QKeySequence, QTextCursor
 from ui.request_editor import RequestEditor, RequestResponseSplitter
 from ui.styles import (
     HESPIA_ORANGE, HESPIA_BG, HESPIA_BG_DARK, HESPIA_BG_LIGHT, HESPIA_TEXT, HESPIA_BORDER,
@@ -414,6 +414,13 @@ class InterceptPanel(QWidget):
         self._intercept_queue: List[dict] = []  # List of {id, raw, type, host, url}
         self._current_index = -1
         self._intercept_on = False
+        
+        # Debounce timer for auto-updates (Content-Length sync)
+        self._debounce_sync = QTimer(self)
+        self._debounce_sync.setSingleShot(True)
+        self._debounce_sync.setInterval(500)
+        self._debounce_sync.timeout.connect(self._apply_auto_updates)
+
         self._setup_ui()
 
     def _setup_ui(self):
@@ -513,6 +520,7 @@ class InterceptPanel(QWidget):
         layout.addWidget(self._splitter, 1)
 
         self._editor.send_to_decoder.connect(self.send_to_decoder.emit)
+        self._editor.textChanged.connect(self._debounce_sync.start)
 
         # ── Info bar
         info = QFrame()
@@ -525,6 +533,52 @@ class InterceptPanel(QWidget):
         il.addWidget(self._info_label)
         il.addStretch()
         layout.addWidget(info)
+
+    def _apply_auto_updates(self):
+        """Automatically update Content-Length: header in intercepted editor."""
+        content = self._editor.get_content()
+        if not content.strip():
+            return
+            
+        parts = content.replace("\r\n", "\n").split("\n\n", 1)
+        if len(parts) < 2:
+            return
+        
+        body = parts[1]
+        length = len(body.encode("utf-8"))
+        
+        # Check if length changed
+        match = re.search(r"Content-Length:\s*(\d+)", content, re.I)
+        if match:
+            current_len = int(match.group(1))
+            if current_len == length:
+                return
+        
+        new_content = re.sub(r"Content-Length:\s*\d+", f"Content-Length: {length}", content, flags=re.I)
+        if new_content == content and "Content-Length:" not in content.lower():
+            # Inject after Host or request line
+            lines = content.split("\n")
+            if len(lines) > 1:
+                lines.insert(2, f"Content-Length: {length}\r")
+                new_content = "\n".join(lines)
+        
+        if new_content != content:
+            # Block signals to avoid recursion during refresh
+            self._editor.blockSignals(True)
+            # Access internal editor for cursor management
+            raw_edit = self._editor._raw_editor
+            cursor = raw_edit.textCursor()
+            pos = cursor.position()
+            anchor = cursor.anchor()
+            
+            self._editor.set_content(new_content)
+            
+            # Restore selection/position
+            new_cursor = raw_edit.textCursor()
+            new_cursor.setPosition(min(anchor, len(new_content)))
+            new_cursor.setPosition(min(pos, len(new_content)), QTextCursor.MoveMode.KeepAnchor)
+            raw_edit.setTextCursor(new_cursor)
+            self._editor.blockSignals(False)
 
     def _toggle_intercept(self, checked: bool):
         self._intercept_on = checked

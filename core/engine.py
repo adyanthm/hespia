@@ -120,13 +120,9 @@ def apply_request_modifications(flow, raw_text: str):
         
         flow.request.headers = new_headers
         
-        # Apply body and update Content-Length
+        # Apply body and update Content-Length using mitmproxy's official API
         content = body.encode("utf-8", errors="replace")
-        flow.request.content = content
-        
-        # CRITICAL: Update Content-Length header to match new body size
-        if "Content-Length" in flow.request.headers:
-            flow.request.headers["Content-Length"] = str(len(content))
+        flow.request.set_content(content)
             
     except Exception as e:
         print(f"[Engine] Failed to apply request modifications: {e}")
@@ -173,12 +169,9 @@ def apply_response_modifications(flow, raw_text: str):
         
         flow.response.headers = new_headers
         
-        # Apply body and update Content-Length
+        # Apply body and update Content-Length using mitmproxy's official API
         content = body.encode("utf-8", errors="replace")
-        flow.response.content = content
-        
-        if "Content-Length" in flow.response.headers:
-            flow.response.headers["Content-Length"] = str(len(content))
+        flow.response.set_content(content)
             
     except Exception as e:
         print(f"[Engine] Failed to apply response modifications: {e}")
@@ -475,6 +468,19 @@ class ProxyEngine(QObject):
             entry = self._addon._flow_entries.get(flow_id)
             if entry:
                 entry.edited = True
+                # SYNC FLOW ENTRY WITH MODIFIED DATA FOR UI
+                entry.method = flow.request.method
+                entry.path = flow.request.path
+                entry.url = flow.request.pretty_url
+                entry.request_headers_raw = dict(flow.request.headers)
+                entry.request_body = flow.request.content or b""
+                entry.request_length = len(entry.request_body)
+                try:
+                    entry.params = "&".join(f"{k}={v}" for k, v in flow.request.query)
+                except Exception: entry.params = ""
+                # Emit update immediately so history shows tempered request
+                self.signals.flow_updated.emit(entry)
+                
         if self._loop:
             self._loop.call_soon_threadsafe(self._safe_resume, flow)
         self.signals.log_message.emit("info", f"[Intercept] Forwarded: {flow_id[:8]} ({flow.request.method} {flow.request.path})")
@@ -499,6 +505,14 @@ class ProxyEngine(QObject):
             entry = self._addon._flow_entries.get(flow_id)
             if entry:
                 entry.edited = True
+                # SYNC RESPONSE DATA FOR UI
+                entry.status_code = flow.response.status_code
+                entry.status_reason = flow.response.reason or ""
+                entry.response_headers_raw = dict(flow.response.headers)
+                entry.response_body = flow.response.content or b""
+                entry.response_length = len(entry.response_body)
+                self.signals.flow_updated.emit(entry)
+
         if self._loop:
             self._loop.call_soon_threadsafe(flow.resume)
 
