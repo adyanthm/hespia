@@ -3,6 +3,8 @@ name: Release Build - Multi-OS
 on:
   push:
     branches: [ "main" ]
+    tags:
+      - 'v*'
   pull_request:
     branches: [ "main" ]
 
@@ -35,23 +37,48 @@ jobs:
       if: matrix.os == 'windows-latest'
       shell: pwsh
       run: |
-        mv dist/Hespia.exe dist/Hespia_Windows_v1.0.0.exe
+        mv dist/Hespia.exe dist/Hespia_Windows.exe
 
     - name: Prep macOS Artifact
       if: matrix.os == 'macos-latest'
       run: |
-        mv dist/Hespia dist/Hespia_macOS_v1.0.0
+        mv dist/Hespia dist/Hespia_macOS
 
     - name: Prep Linux Artifact
       if: matrix.os == 'ubuntu-latest'
       run: |
-        mv dist/Hespia dist/Hespia_Linux_v1.0.0
+        mv dist/Hespia dist/Hespia_Linux
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: Hespia-${{ matrix.os }}
         path: |
-          dist/Hespia_Windows_v1.0.0.exe
-          dist/Hespia_macOS_v1.0.0
-          dist/Hespia_Linux_v1.0.0
+          dist/Hespia_Windows.exe
+          dist/Hespia_macOS
+          dist/Hespia_Linux
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+        merge-multiple: true
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          artifacts/Hespia_Windows.exe
+          artifacts/Hespia_macOS
+          artifacts/Hespia_Linux
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
