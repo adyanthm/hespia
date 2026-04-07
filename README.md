@@ -14,43 +14,38 @@ Hespia is a high-performance HTTP/HTTPS proxy and security workbench built for r
 
 #### 🌐 **Dashboard**
 Real-time monitoring and active connection status. No bloat—just the metrics you need to verify your interception is running at zero latency.
-`![Dashboard Recording Placeholder](media/gifs/dashboard.gif)`
+`![Dashboard](media/dashboard.gif)`
 
 ---
 
 #### 🎯 **Target**
 Map your attack surface. Hespia generates hierarchical site trees from live traffic and provides granular scope-limiting to filter out noisy background requests.
-`![Target Module Placeholder](media/gifs/target.gif)`
+`![Target Module](media/sitemap.gif)`
 
 ---
 
 #### 🛑 **Proxy & Intercept**
 The primary workbench for real-time traffic manipulation. Freeze requests and responses, edit headers or bodies in-situ, and forward or drop them with a single click.
-`![Proxy Intercept Placeholder](media/gifs/proxy.gif)`
+`![Proxy Intercept](media/proxy.gif)`
 
 ---
 
 #### ⚔️ **Intruder**
 Automation without the complexity. Hespia's transformation engine supports **Sniper**, **Battering Ram**, **Pitchfork**, and **Cluster Bomb** attack modes for exhaustive credential and parameter fuzzing.
-`![Intruder Attack Placeholder](media/gifs/intruder.gif)`
+`![Intruder Attack](media/intruder.gif)`
 
 ---
 
 #### 🔄 **Repeater**
 The standard for manual vulnerability testing. Replay individual requests, modify them on the fly, and track your testing history across isolated tabs. 
-`![Repeater Overview Placeholder](media/gifs/repeater.gif)`
+`![Repeater Overview](media/repeater.gif)`
 
 ---
 
 #### 🧪 **Decoder & Comparer**
 Toolkit for handling data. Decoder provides multi-stage encoding/decoding (Base64, URL, Hex, HTML), while Comparer offers visual diffing between different sets of requests or responses.
-`![Decoder/Comparer Placeholder](media/gifs/toolkit.gif)`
+`![Toolkit](media/comparer.gif)`
 
----
-
-#### 🔍 **Help Suite**
-Built-in library of technical documentation. Searchable and accessible offline, ensuring all tool capabilities and attack patterns are documented within the application.
-`![Help Suite Placeholder](media/gifs/help.gif)`
 
 ---
 

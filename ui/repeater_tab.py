@@ -39,7 +39,7 @@ class SendWorker(QObject):
             result = self.engine.send_raw_request(
                 self.host, self.port, self.is_https, self.raw
             )
-            self.finished.emit(result)
+            self.finished.emit(result)  
         except Exception as e:
             self.error.emit(str(e))
 
